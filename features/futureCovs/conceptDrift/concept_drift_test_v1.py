@@ -1,11 +1,11 @@
 """
-concept_drift_test.py —— 概念漂移与工况切换测试
+concept_drift_test_v1.py —— 概念漂移与工况切换测试
 ====================================
-工业背景：
+工业背景:
   设备启停、负载阶跃、季节性工况切换会导致训练数据与预测目标分布不一致.
   这是工业时序预测的首要痛点.
 
-测试目的：
+测试目的:
   构造训练段平稳、预测段发生分布漂移的数据, 检验模型对三种典型漂移
   模式的抵抗力, 并验证长上下文窗口在漂移下是否反而是负担.
 """
@@ -34,7 +34,7 @@ SCRIPT_DIR = Path(__file__).parent
 # ============================================================
 N_TRAIN = 512               # 训练段总长度(包含历史窗口及之前的数据)
 N_FORECAST = DEFAULT_OUTPUT_LENGTH  # 预测长度(64)
-DRIFT_LEAD = 20             # 漂移提前量：在训练段末尾的前 DRIFT_LEAD 个点开始引入漂移
+DRIFT_LEAD = 20             # 漂移提前量: 在训练段末尾的前 DRIFT_LEAD 个点开始引入漂移
                             # 这样当 input_length > DRIFT_LEAD 时, 历史窗口会包含漂移信息
 
 TOTAL = N_TRAIN + N_FORECAST
@@ -61,7 +61,7 @@ def generate_full_sequence(mode):
         drift_start_index = N_TRAIN - DRIFT_LEAD   (漂移开始的位置)
     """
     t_full = np.arange(TOTAL)
-    # 基础趋势(整个序列：训练段趋势 + 预测段趋势延续)
+    # 基础趋势(整个序列: 训练段趋势 + 预测段趋势延续)
     trend_full = np.concatenate([
         np.linspace(50, 65, N_TRAIN),
         np.linspace(65, 80, N_FORECAST)
@@ -122,7 +122,7 @@ INPUT_LENGTHS = [96, 256, 512]
 
 total_calls = len(MODEL_LIST) * len(SCENARIOS) * len(INPUT_LENGTHS)
 print("=" * 80)
-print("场景：概念漂移测试(漂移提前出现于历史窗口末尾)")
+print("场景: 概念漂移测试(漂移提前出现于历史窗口末尾)")
 print(f"   {len(MODEL_LIST)} 模型 x {len(SCENARIOS)} 场景 x {len(INPUT_LENGTHS)} 输入长度 = {total_calls} 次调用")
 print(f"   漂移提前量: {DRIFT_LEAD} 个点(历史窗口需 > {DRIFT_LEAD} 才可见)")
 print("=" * 80)
@@ -142,7 +142,7 @@ for mode in SCENARIOS:
     target_forecast = full_seq[N_TRAIN:]
 
     for in_len in INPUT_LENGTHS:
-        # 截取历史窗口：从 drift_start - (in_len - DRIFT_LEAD) 到 N_TRAIN
+        # 截取历史窗口: 从 drift_start - (in_len - DRIFT_LEAD) 到 N_TRAIN
         # 但为了保证窗口长度为 in_len, 起点为 N_TRAIN - in_len
         start_idx = N_TRAIN - in_len
         history = df.iloc[start_idx:N_TRAIN][["time", "target"]].copy()
@@ -218,7 +218,7 @@ print("\n" + "=" * 80)
 print("核心分析")
 print("=" * 80)
 
-# 分析1：各漂移场景 vs 基准的退化倍数(仅针对 input_length=256, 且历史包含漂移的情况)
+# 分析1: 各漂移场景 vs 基准的退化倍数(仅针对 input_length=256, 且历史包含漂移的情况)
 print("\n【分析1】漂移场景 vs 基准的精度退化(input_length=256, 历史包含漂移)")
 print("-" * 70)
 
@@ -252,7 +252,7 @@ for model_id in MODEL_LIST:
                 verdict = "[严重] 严重退化"
             print(f"     {r['scenario']:>28s}: MAE={r['mae']:.4f} ({ratio:.1f}x) -> {verdict}")
 
-# 分析2：对比“历史含漂移”与“历史不含漂移”的性能差异(以B2为例)
+# 分析2: 对比“历史含漂移”与“历史不含漂移”的性能差异(以B2为例)
 print("\n【分析2】历史信息对漂移适应的影响(以B2-均值平移为例, input_length=256)")
 print("-" * 70)
 for model_id in MODEL_LIST:
@@ -273,7 +273,7 @@ for model_id in MODEL_LIST:
     else:
         print(f"     数据不足, 跳过")
 
-# 分析3：长上下文在漂移下的有效性(B5复合漂移, 仅看历史包含漂移的情况)
+# 分析3: 长上下文在漂移下的有效性(B5复合漂移, 仅看历史包含漂移的情况)
 print("\n【分析3】长上下文在漂移下的收益(B5-复合漂移, 历史包含漂移)")
 print("-" * 70)
 
@@ -296,9 +296,9 @@ for model_id in MODEL_LIST:
     # 判断趋势
     mae_list = [b5_results[k] for k in sorted(b5_results.keys())]
     if mae_list[-1] < mae_list[0] * 0.9:
-        print(f"     [通过] 长窗口(512)比短窗口(96) MAE 更低 -> 长上下文在漂移下有收益")
+        print(f"     ✅[通过] 长窗口(512)比短窗口(96) MAE 更低 -> 长上下文在漂移下有收益")
     elif mae_list[-1] > mae_list[0] * 1.1:
-        print(f"     [警告] 长窗口(512)比短窗口(96) MAE 更高 -> 长上下文可能引入冗余信息")
+        print(f"     ⚠️[警告] 长窗口(512)比短窗口(96) MAE 更高 -> 长上下文可能引入冗余信息")
     else:
         print(f"     -> 长短窗口 MAE 接近, input_length 对漂移场景影响不大")
 
@@ -307,7 +307,7 @@ for model_id in MODEL_LIST:
 # 7. 保存结果
 # ============================================================
 result_df = pd.DataFrame(all_results)
-out_path = SCRIPT_DIR / "concept_drift_result.csv"
+out_path = SCRIPT_DIR / "concept_drift_result_v1.csv"
 result_df.to_csv(out_path, index=False)
 print(f"\n结果已保存: {out_path}")
 print("=" * 80)
