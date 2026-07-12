@@ -30,3 +30,5 @@
    `python ./features/futureCovs/irregularSampling/irregular_sampling_test.py`  # 非规则采样鲁棒性  
    `python ./features/futureCovs/conceptDrift/concept_drift_test_v1.py`  # 概念漂移与工况切换测试  
    `python ./features/futureCovs/conceptDrift/concept_drift_test_v2.py`  # 概念漂移与工况切换测试(XYZ场景)  
+   `python ./features/futureCovs/freqMismatch/frequency_mismatch_test.py`  # C5 频率不匹配鲁棒性  
+
