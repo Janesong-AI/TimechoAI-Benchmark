@@ -1,0 +1,133 @@
+# ========================
+# 1. Python 运行时与编译文件
+# ========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyd
+.Python
+*.egg-info/
+*.egg
+
+# ========================
+# 2. 虚拟环境与依赖管理
+# ========================
+venv/
+.venv/
+env/
+ENV/
+.conda/
+Pipfile.lock
+poetry.lock
+
+# ========================
+# 3. 环境变量与敏感信息
+# ========================
+.env
+.env.local
+.env.*.local
+secrets.json
+*.pem
+
+# ========================
+# 4. 构建与分发产物
+# ========================
+build/
+dist/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.manifest
+*.spec
+
+# ========================
+# 5. 测试与代码检查缓存
+# ========================
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+.mypy_cache/
+.pyre/
+
+# ========================
+# 6. IDE 与编辑器配置
+# ========================
+# PyCharm / JetBrains
+.idea/
+*.iml
+*.iws
+# VS Code
+.vscode/
+*.code-workspace
+# Vim / Emacs
+*.swp
+*.swo
+*~
+\#*#
+\#*\#
+
+# ========================
+# 7. Jupyter Notebook
+# ========================
+.ipynb_checkpoints/
+*.ipynb~
+nbproject/
+profile_default/
+ipython_config.py
+
+# ========================
+# 8. AI / 深度学习相关 (按需保留)
+# ========================
+# 模型权重与检查点
+*.pt
+*.pth
+*.ckpt
+*.bin
+# 日志与监控输出
+logs/
+runs/
+tensorboard/
+wandb/
+# 输出目录
+checkpoints/
+save/
+output/
+results/
+
+# ========================
+# 9. 操作系统生成文件
+# ========================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+# Windows
+Thumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+# Linux
+*~
+
+# ========================
+# 10. 日志与临时文件
+# ========================
+*.log
+*.tmp
+*.temp
+temp/
+tmp/

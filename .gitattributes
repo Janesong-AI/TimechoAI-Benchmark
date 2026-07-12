@@ -1,0 +1,90 @@
+# ================================
+# 1. 全局默认规则
+# ================================
+# 自动检测文本文件, 统一使用 LF 换行符, 避免跨平台冲突
+* text=auto eol=lf
+
+# ================================
+# 2. Python 专属配置
+# ================================
+# Python 源码强制使用 LF 换行符, 并启用 Python 语法高亮的 diff 对比
+*.py text eol=lf diff=python
+*.pyw text eol=lf diff=python
+# Python 编译产物为二进制文件, 不进行换行符转换
+*.pyc binary
+*.pyo binary
+*.pyd binary
+
+# ================================
+# 3. 常见文本与配置文件
+# ================================
+# 文档与配置文件强制使用 LF 换行符
+*.md text eol=lf diff=markdown
+*.txt text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+*.ini text eol=lf
+*.cfg text eol=lf
+*.csv text eol=lf
+
+# Jupyter Notebook 强制使用 LF 换行符
+*.ipynb text eol=lf
+
+# Shell 脚本强制使用 LF
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Windows 批处理脚本强制使用 CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Git 自身配置文件
+.gitignore text eol=lf
+.gitattributes text eol=lf
+
+# ================================
+# 4. 二进制文件处理
+# ================================
+# 图片与字体资源
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.ttf binary
+*.otf binary
+
+# 压缩包与可执行文件
+*.zip binary
+*.tar.gz binary
+*.gz binary
+*.exe binary
+*.dll binary
+
+# 音视频文件
+*.mp4 binary
+*.mp3 binary
+*.wav binary
+
+# AI/深度学习模型文件
+*.h5 binary
+*.pth binary
+*.onnx binary
+*.pkl binary
+*.ckpt binary
+
+# ================================
+# 5. 导出与语言识别优化
+# ================================
+# 导出压缩包时忽略测试和缓存目录
+/tests/* export-ignore
+/.pytest_cache/* export-ignore
+/__pycache__/* export-ignore
+
+# 修正 GitHub 语言统计(防止 YAML/XML 等配置文件干扰 Python 占比)
+*.yaml linguist-language=Python
+*.yml linguist-language=Python
+*.xml linguist-language=Python
