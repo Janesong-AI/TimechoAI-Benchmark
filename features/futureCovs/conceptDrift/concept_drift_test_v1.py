@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 concept_drift_test_v1.py —— 概念漂移与工况切换测试
 ====================================
@@ -5,9 +7,14 @@ concept_drift_test_v1.py —— 概念漂移与工况切换测试
   设备启停、负载阶跃、季节性工况切换会导致训练数据与预测目标分布不一致.
   这是工业时序预测的首要痛点.
 
+原理: 对比不同漂移场景的预测精度差异
+
 测试目的:
   构造训练段平稳、预测段发生分布漂移的数据, 检验模型对三种典型漂移
   模式的抵抗力, 并验证长上下文窗口在漂移下是否反而是负担.
+
+Author: Janesong
+Create Date: 2026/07/06, Update on 2026/07/09, Update on 2026/07/12.
 """
 
 import os
@@ -26,8 +33,10 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from config.settings import MODEL_LIST, DEFAULT_OUTPUT_LENGTH
 from core.timecho import forecast
+from utils.file_utils import save_to_csv
 
 SCRIPT_DIR = Path(__file__).parent
+RESULT_CSV_PATH = SCRIPT_DIR / "concept_drift_result_v1.csv"
 
 # ============================================================
 # 1. 参数配置
@@ -306,9 +315,7 @@ for model_id in MODEL_LIST:
 # ============================================================
 # 7. 保存结果
 # ============================================================
-result_df = pd.DataFrame(all_results)
-out_path = SCRIPT_DIR / "concept_drift_result_v1.csv"
-result_df.to_csv(out_path, index=False)
-print(f"\n结果已保存: {out_path}")
+result_path = save_to_csv(RESULT_CSV_PATH, all_results)
+print(f"\n结果已保存: {result_path}")
 print("=" * 80)
 print("测试完成！")
