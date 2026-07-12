@@ -2,14 +2,23 @@
 input_length_test.py —— input_length消融测试
 ====================================
 
-所属模块: features/futureCovs/inputLength  （未来协变量测试套件-输入长度）
+所属模块: features/futureCovs/inputLength (未来协变量测试套件-输入长度)
 测试对象: TimechoAI 预测 API 在不同历史输入长度下的响应能力
-设计目的: 验证 DEFAULT_INPUT_LENGTH 配置的实际可用性，确保模型能正确处理
-          指定长度的历史数据，并返回预期的 output_length 个预测点。
-# 同一模型，分别用 96/192/256/384/512 点输入，对比 MAE 随 input_length 变化
+设计目的: 验证 DEFAULT_INPUT_LENGTH 配置的实际可用性, 确保模型能正确处理
+          指定长度的历史数据, 并返回预期的 output_length 个预测点. 
+# 同一模型, 分别用 96/192/256/384/512 点输入, 对比 MAE 随 input_length 变化
 
 数据文件:
-  - sample.csv: 含 time（日期）和 target（目标值）两列的简单时间序列
+  - sample.csv: 含 time(日期)和 target(目标值)两列的简单时间序列,
+    无协变量列. 共 365+ 行, 足够取 DEFAULT_INPUT_LENGTH=256 个历史点.
+
+注意事项:
+  1. sample.csv 只有 time + target 两列, history_covs / future_covs 均为 None.
+  2. 输出保存为 input_length_result.csv(step, pred_value).
+  3. 如需测试不同输入长度, 修改 DEFAULT_INPUT_LENGTH 或直接修改 forecast() 的 output_length 参数即可. 
+
+Author: Janesong
+Create Date: 2026/06/29.
 """
 
 import os
@@ -28,11 +37,12 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from config.settings import DEFAULT_OUTPUT_LENGTH
 from core.timecho import forecast
+from utils.cvs_utils import save_to_csv
 
 SCRIPT_DIR = Path(__file__).parent
 
 # ============================================================
-# 1. 生成合成数据（与脏数据测试同源，保证可比性）
+# 1. 生成合成数据(与脏数据测试同源, 保证可比性)
 # ============================================================
 print("📦 生成合成数据...")
 np.random.seed(42)
@@ -45,7 +55,7 @@ target = trend + seasonal + noise
 
 df = pd.DataFrame({"time": dates, "target": target.round(4)})
 
-# 真实值（最后 64 点，作为 ground truth）
+# 真实值(最后 64 点, 作为 ground truth)
 ground_truth = df.iloc[-64:]["target"].values
 FORECAST_LEN = DEFAULT_OUTPUT_LENGTH
 
@@ -59,7 +69,7 @@ MODELS = ["Timer-3.5", "Chronos-2"]
 # 3. 逐模型 × 逐长度 测试
 # ============================================================
 total_calls = len(MODELS) * len(INPUT_LENGTHS)
-print(f"🚀 消融实验：{len(MODELS)} 模型 × {len(INPUT_LENGTHS)} 长度 = {total_calls} 次调用")
+print(f"🚀 消融实验: {len(MODELS)} 模型 × {len(INPUT_LENGTHS)} 长度 = {total_calls} 次调用")
 print("=" * 80)
 
 all_results = []
@@ -68,12 +78,12 @@ for model_id in MODELS:
     print(f"\n📋 模型: {model_id}")
     
     for in_len in INPUT_LENGTHS:
-        # 截取历史数据：取最后 in_len+FORECAST_LEN 行的前 in_len 行
+        # 截取历史数据: 取最后 in_len+FORECAST_LEN 行的前 in_len 行
         history = df.iloc[-(in_len + FORECAST_LEN):-FORECAST_LEN][["time", "target"]].copy()
         
         t0 = time.perf_counter()
         try:
-            # 调用 core 层的封装方法，它内部会调用 utils.client.get_timecho_client()
+            # 调用 core 层的封装方法, 它内部会调用 utils.client.get_timecho_client()
             pred_values, elapsed_ms, error = forecast(
                 targets=history,
                 model_id=model_id,
@@ -131,7 +141,7 @@ for r in all_results:
 # ============================================================
 result_df = pd.DataFrame(all_results)
 out_path = SCRIPT_DIR / "input_length_result.csv"
-result_df.to_csv(out_path, index=False)
+save_to_csv(result_df, out_path)
 print(f"\n💾 结果已保存: {out_path}")
 print("=" * 80)
 print("测试完成！")
