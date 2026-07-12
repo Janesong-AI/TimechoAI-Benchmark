@@ -1,31 +1,38 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 cov_test.py —— 协变量有效性测试
+====================================
 作用: 验证 TimechoAI 使用"未来协变量"
 原理: 传不同的 future_covs, 看预测结果是否不同
 
+Author: Janesong
+Create Date: 2026/06/29, Update on 2026/07/12.
 """
 
 import time
-import json
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
+import numpy as np
 
 import sys
 sys.path.insert(0, str(Path(__file__).parents[3]))
 
 from config.settings import DEFAULT_INPUT_LENGTH, DEFAULT_OUTPUT_LENGTH
 from core.timecho import forecast, calc_metrics, calc_diff
+from utils.file_utils import save_with_json_backup
 
 # ============================================================
 # 数据相关配置
 # ============================================================
 
 SCRIPT_DIR = Path(__file__).parent
-CSV_PATH = SCRIPT_DIR / "cov_test_data.csv"
+CSV_PATH = SCRIPT_DIR / "cov_test_data.csv"        # 测试数据文件
+RESULT_PATH = SCRIPT_DIR / "cov_test_results.csv"  # 预测结果文件
 
-MODEL_ID = "Auto"   # 模型列表: Auto / Timer-3.5 / Timer-3.0 / Chronos-2 / AutoARIMA / Holt-Winters
+MODEL_ID = "Auto"  # 模型列表: Auto / Timer-3.5 / Timer-3.0 / Chronos-2 / AutoARIMA / Holt-Winters
+
 # ============================================================
 # 读取数据
 # ============================================================
@@ -94,6 +101,7 @@ SCENARIOS = [
     ("D-不传协变量", None),
 ]
 
+
 # ============================================================
 # 逐个场景调用预测
 # ============================================================
@@ -149,15 +157,15 @@ diffs = {
 # 打印结果汇总
 # ============================================================
 
-print("=" * 80)
+print("\n" + "=" * 80)
 print("📊 测试结果汇总")
 print("=" * 80)
 
-print()
-print("【1】各场景预测精度(vs 真实值)")
+print("\n【1】各场景预测精度(vs 真实值)")
 print("-" * 70)
 print(f"{'场景':>20s} | {'MAE':>10s} | {'RMSE':>10s} | {'MAPE(%)':>10s} | {'耗时(ms)':>10s}")
 print("-" * 70)
+
 for r in results:
     m = r["metrics"]
     mae_str = f"{m['MAE']:.4f}" if m['MAE'] is not None else "N/A"
@@ -165,8 +173,7 @@ for r in results:
     mape_str = f"{m['MAPE']:.2f}" if m['MAPE'] is not None else "N/A"
     print(f"{r['scene']:>20s} | {mae_str:>10s} | {rmse_str:>10s} | {mape_str:>10s} | {r['latency_ms']:>10.0f}")
 
-print()
-print("【2】场景间预测差异(核心指标)")
+print("\n【2】场景间预测差异(核心指标)")
 print("-" * 70)
 print(f"{'对比':>30s} | {'平均绝对差异':>12s} | {'判断':>20s}")
 print("-" * 70)
@@ -186,8 +193,7 @@ for name, diff in diff_labels:
     else:
         print(f"{name:>30s} | {diff:>12.4f} | {'✅ 有显著影响':>20s}")
 
-print()
-print("【3】自动结论")
+print("\n【3】自动结论")
 print("-" * 70)
 
 if all(v is not None for v in diffs.values()):
@@ -218,8 +224,8 @@ if all(v is not None for v in diffs.values()):
 # ============================================================
 # 保存结果
 # ============================================================
-print()
-print("【4】保存结果")
+
+print("\n【4】保存结果")
 
 results_data = []
 for r in results:
@@ -235,25 +241,11 @@ for r in results:
                 "latency_ms": r["latency_ms"],
             })
 
-results_df = pd.DataFrame(results_data)
-out_path = SCRIPT_DIR / "cov_test_result.csv"
-results_df.to_csv(out_path, index=False)
-print(f"   详细结果已保存: {out_path}")
+csv_path, json_path = save_with_json_backup(RESULT_PATH, results_data)
+print(f"   ✅ 详细结果已保存CSV: {csv_path}")
+print(f"   ✅ 预测值JSON已保存: {json_path}")
 
-pred_json = {
-    "ground_truth": ground_truth.tolist(),
-    "A_real": results[0]["pred"].tolist() if results[0]["pred"] is not None else None,
-    "B_noise": results[1]["pred"].tolist() if results[1]["pred"] is not None else None,
-    "C_anti": results[2]["pred"].tolist() if results[2]["pred"] is not None else None,
-    "D_none": results[3]["pred"].tolist() if results[3]["pred"] is not None else None,
-    "diffs": {k: v for k, v in diffs.items()},
-}
-json_path = SCRIPT_DIR / "cov_test_result.json"
-with open(json_path, "w") as f:
-    json.dump(pred_json, f, indent=2)
-print(f"   预测值JSON已保存: {json_path}")
 
-print()
-print("=" * 80)
+print("\n" + "=" * 80)
 print("测试完成！")
 print("=" * 80)
