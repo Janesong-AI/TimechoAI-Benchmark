@@ -5,6 +5,7 @@
 - `config/`: 全局配置管理模块.
    - `setting.xml`: 集中管理环境变量(如 `TIMECHO_API_KEY`)及全局默认参数.
 - `core/`: 核心通用组件层(跨业务复用). 
+   - `resume.py`: 封装断点续跑机制, 管理检查点状态与文件持久化.
    - `timecho.py`: 封装 TimechoAI API 交互逻辑.
 - `features/`: 业务特性实现层, 存放具体业务场景逻辑.
 - `utils/`: 基础工具库, 存放无状态纯函数及通用实体封装.
