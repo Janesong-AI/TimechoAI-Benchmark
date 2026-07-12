@@ -1,9 +1,20 @@
-# dirty_test.py —— 脏数据鲁棒性测试
-# 测试目的: 验证模型对缺失值、异常尖峰的抵抗力
-# 原理: 用 7 种脏数据(含 baseline)分别预测, 对比精度退化程度
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+dirty_test.py —— 脏数据鲁棒性测试
+====================================
+
+测试目的: 验证模型对缺失值、异常尖峰的抵抗力
+作用: 测试模型对脏数据的鲁棒性
+原理: 用 7 种脏数据(含 baseline)分别预测, 对比精度退化程度
+
+补充: API限制: TimechoAI API 不支持 NaN 值输入（包括 target 和 cov 列）
+
+Author: Janesong
+Create Date: 2026/06/29, Update on 2026/07/12.
+"""
 
 import time
-import json
 from pathlib import Path
 
 import pandas as pd
@@ -14,12 +25,13 @@ sys.path.insert(0, str(Path(__file__).parents[3]))
 
 from config.settings import DEFAULT_INPUT_LENGTH, DEFAULT_OUTPUT_LENGTH
 from core.timecho import forecast, calc_metrics
+from utils.file_utils import save_with_json_backup
 
 # ============================================================
 # 配置区
 # ============================================================
 SCRIPT_DIR = Path(__file__).parent
-
+RESULT_PATH = SCRIPT_DIR / "dirty_test_result.csv"  # 预测结果文件
 # 测试模型（选支持协变量的，Timer 系列会 422）
 MODELS_TO_TEST = ["Timer-3.5", "Chronos-2"]
 
@@ -152,9 +164,6 @@ for model_id in MODELS_TO_TEST:
 # ============================================================
 # 汇总表格
 # ============================================================
-print("\n\n" + "=" * 100)
-print("📋 鲁棒性分析结论")
-print("=" * 100)
 
 def get_result(model_id, scene_prefix, pass_name="预处理"):
     """辅助函数: 精确获取某个模型、某个场景、某一轮的结果"""
@@ -164,7 +173,7 @@ def get_result(model_id, scene_prefix, pass_name="预处理"):
     return None
 
 # ============================================================
-# 自动结论分析
+# 结论分析
 # ============================================================
 print("\n\n" + "=" * 100)
 print("📋 鲁棒性分析结论")
@@ -212,12 +221,18 @@ for model_id in MODELS_TO_TEST:
         ratio = r_pre["mae"] / baseline_mae if baseline_mae > 0 else float("inf")
         verdict = "💥 起飞/雪崩!" if r_pre["is_explosion"] else ("✅ 工业可用" if ratio < 1.5 else "🔴 不可用")
         print(f"      S6-混合脏: MAE={r_pre['mae']:.4f} (基准的 {ratio:.1f}x) → {verdict}")
+    print()
 
+# ============================================================
 # 保存结果
-summary_df = pd.DataFrame([{k: v for k, v in r.items()} for r in all_results])
-summary_df.to_csv(SCRIPT_DIR / "dirty_test_result.csv", index=False)
-with open(SCRIPT_DIR / "dirty_test_result.json", "w") as f:
-    json.dump(all_results, f, indent=2, ensure_ascii=False, default=str)
+# ============================================================
+print("=" * 90)
+print("保存结果汇总")
+print("=" * 90)
+
+csv_path, json_path = save_with_json_backup(RESULT_PATH, results_data)
+print(f"   ✅ 详细结果已保存CSV: {csv_path}")
+print(f"   ✅ 预测值JSON已保存: {json_path}")
 
 print("\n" + "=" * 100)
 print("测试完成！")
