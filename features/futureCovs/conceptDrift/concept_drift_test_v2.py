@@ -1,29 +1,34 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
-concept_drift_test_v2.py —— 概念漂移与工况切换测试(XYZ场景,并支持断点续跑) 
+concept_drift_test_v2.py —— 概念漂移与工况切换测试(XYZ场景) 
 ====================================
-工业背景: 
+工业背景:
   设备启停、负载阶跃、季节性工况切换会导致训练数据与预测目标分布不一致.
   这是工业时序预测的首要痛点.
 
-测试目的: 
-  构造训练段平稳、预测段发生分布漂移的数据,检验模型对三种典型漂移
-  模式的抵抗力,并验证长上下文窗口在漂移下是否反而是负担.
+测试目的:
+  构造训练段平稳、预测段发生分布漂移的数据, 检验模型对三种典型漂移
+  模式的抵抗力, 并验证长上下文窗口在漂移下是否反而是负担.
 
-特性: 
+特性:
   1. 自动判断同级目录是否有 concept_drift_result_v2.csv
-  2. 有 CSV: 读取记录,跳过已完成,走断点续跑
+  2. 有 CSV: 读取记录, 跳过已完成, 走断点续跑
   3. 无 CSV: 从零开始跑全量
   4. 每完成一次调用立即追加保存
-  5. 429 限流: 停止本次运行,不扣总数,下次可重试
-  6. 422 永久失败: 扣总数,不再重试,不影响最终分析
-  7. Timer-3.5/Timer-3.0 跑 Z 类场景: 直接跳过,因为不支持协变量【422】
+  5. 429 限流: 停止本次运行, 不扣总数, 下次可重试
+  6. 422 永久失败: 扣总数, 不再重试, 不影响最终分析
+  7. Timer-3.5/Timer-3.0 跑 Z 类场景: 直接跳过, 因为不支持协变量【422】
 
-调用次数: 
+调用次数:
   主测试(XYZ): 6 模型 × 11 场景 × 3 长度 = 198 次.
   消融测试(Y4 auto_adapt): 6 模型 × 2 开关 × 3 长度 = 36 次.
   扣除不支持协变量的 12 次(NO_COV 跳过).
   扣除消融去重 18 次(Y4/adapt=True 与主测试重复).
-  原始任务总数 234 次,实际需完成 204 次.
+  原始任务总数 234 次, 实际需完成 204 次.
+
+Author: Janesong
+Create Date: 2026/07/10, Update on 2026/07/12.
 """
 
 import os
@@ -45,6 +50,7 @@ from core.resume import load_completed_results, append_result, is_rate_limited
 from core.timecho import forecast
 
 SCRIPT_DIR = Path(__file__).parent
+RESULT_CSV_PATH = SCRIPT_DIR / "concept_drift_result_v2.csv"
 
 # ============================================================
 # 1. 全局参数
@@ -69,18 +75,17 @@ DRIFT_MEAN_SHIFT = 15        # 均值平移幅度
 DRIFT_NOISE_MULTIPLIER = 3   # 方差扩张倍数
 DRIFT_PHASE_SHIFT = np.pi/2  # 相位偏移(90度)
 
-# 漂移过渡区长度(在历史窗口末端逐步引入漂移,模拟真实工况切换)
+# 漂移过渡区长度(在历史窗口末端逐步引入漂移, 模拟真实工况切换)
 DRIFT_RAMP_LEN = 64          # 最后 64 个历史点逐步过渡
 
 INPUT_LENGTHS = [96, 256, 512]
-RESULT_PATH = SCRIPT_DIR / "concept_drift_result_v2.csv"
 
 AUTO_ADAPT_ABLATION_SCENARIO = "Y4"
 AUTO_ADAPT_VALUES = [True, False]
 
 # 原始任务总数 = 主测试(11场景×6模型×3长度) + 消融(6模型×2开关×3长度)
 TOTAL_RAW = 11 * 6 * 3 + 6 * 2 * 3  # = 234
-# Z场景 × 不支持协变量的2个模型 × 3长度 = 12(代码层跳过,不调API)
+# Z场景 × 不支持协变量的2个模型 × 3长度 = 12(代码层跳过, 不调API)
 NO_COV_SKIP_COUNT = 2 * len(NO_COV_MODELS) * len(INPUT_LENGTHS)  # = 12
 # 消融测试中 Y4/adapt=True 与主测试完全重复 = 6模型×1×3长度 = 18
 DEDUP_SKIP_COUNT = 6 * 1 * len(INPUT_LENGTHS)  # = 18
@@ -90,7 +95,7 @@ DEDUP_SKIP_COUNT = 6 * 1 * len(INPUT_LENGTHS)  # = 18
 # 2. 信号生成与场景构造
 # ============================================================
 def _safe_logspace(start, end, n):
-    """生成从 start 到 end 的 n 个点,允许 start=0(用线性替代)."""
+    """生成从 start 到 end 的 n 个点, 允许 start=0(用线性替代)."""
     if start <= 0:
         k = max(1, n // 3)
         part1 = np.linspace(start, 0.01, k)
@@ -126,7 +131,7 @@ def build_scenarios():
     future_compound = (future_trend + DRIFT_MEAN_SHIFT + BASE_SEASONAL_AMP * np.sin(2 * np.pi * t_future / BASE_SEASONAL_PERIOD + DRIFT_PHASE_SHIFT) + future_noise_3x).round(4)
 
     # ================================================================
-    # X 类: 漂移不可见(历史段完全平稳,未来段突变)
+    # X 类: 漂移不可见(历史段完全平稳, 未来段突变)
     # ================================================================
     for sid, label, fut, desc in [
         ("X1", "X1-基准(无漂移,不可见)", base_future, "基准"),
@@ -142,7 +147,7 @@ def build_scenarios():
         })
 
     # ================================================================
-    # Y 类: 漂移部分可见(历史段末端逐步过渡,未来段延续漂移)
+    # Y 类: 漂移部分可见(历史段末端逐步过渡, 未来段延续漂移)
     # ================================================================
     def build_y_history(drift_type):
         stable_len = N_CONTEXT - DRIFT_RAMP_LEN
@@ -187,9 +192,9 @@ def build_scenarios():
         })
 
     # ================================================================
-    # Z 类: 协变量传递(历史段平稳,通过未来协变量传递漂移信号)
+    # Z 类: 协变量传递(历史段平稳, 通过未来协变量传递漂移信号)
     # ================================================================
-    # Z1: 历史段无协变量(全0),未来协变量为全1
+    # Z1: 历史段无协变量(全0), 未来协变量为全1
     history_cov_z1 = pd.DataFrame({
         "time": DATES[:N_CONTEXT],
         "target": base_history,
@@ -204,10 +209,10 @@ def build_scenarios():
         "history": history_cov_z1,
         "future_target": future_mean_shift,
         "future_covs": future_cov_z1,
-        "description": "协变量信号(历史无,未来有)"
+        "description": "协变量信号(历史无, 未来有)"
     })
     
-    # Z2: 历史段末尾逐渐升高的协变量,未来继续为全1
+    # Z2: 历史段末尾逐渐升高的协变量, 未来继续为全1
     y_history_mean = build_y_history('mean_shift')  # 复用 Y1 的历史目标值
     history_cov_z2 = pd.DataFrame({
         "time": DATES[:N_CONTEXT],
@@ -241,9 +246,9 @@ def compute_metrics(pred, target):
 
 def run_forecast(scenario, model_id, in_len, auto_adapt=True):
     """
-    执行单次预测,正确处理协变量的传递: 
-    - 将 history 中的 time 和 target 作为 targets
-    - 如果 history 还有其它列,则提取为 history_covs
+    执行单次预测, 正确处理协变量的传递:
+      -- 将 history 中的 time 和 target 作为 targets
+      -- 如果 history 还有其它列, 则提取为 history_covs
     - future_covs 从 scenario 中获取(可能为 None 或 DataFrame)
     """
     # 提取 targets (必须包含 time 和 target)
@@ -252,7 +257,7 @@ def run_forecast(scenario, model_id, in_len, auto_adapt=True):
     # 提取历史协变量(如果存在除 time, target 之外的列)
     history_covs_df = None
     if len(scenario["history"].columns) > 2:
-        # 必须包含 time 列,SDK 要求历史协变量与目标序列在时间上对齐
+        # 必须包含 time 列, SDK 要求历史协变量与目标序列在时间上对齐
         cov_cols = [c for c in scenario["history"].columns if c not in ["time", "target"]]
         if cov_cols:
             history_covs_df = scenario["history"][["time"] + cov_cols].iloc[-in_len:].copy()
@@ -302,7 +307,7 @@ def run_forecast(scenario, model_id, in_len, auto_adapt=True):
 # 4. 主流程
 # ============================================================
 scenarios = build_scenarios()
-records, perm_fail_count = load_completed_results(str(RESULT_PATH))
+records, perm_fail_count = load_completed_results(str(RESULT_CSV_PATH))
 
 # 构建 completed_keys: 成功 + 永久失败(非限流错误)
 completed_keys = set()
@@ -313,7 +318,7 @@ for r in records:
         completed_keys.add(key)
     else:
         if not is_rate_limited(str(r.get("error", ""))):
-            # 永久失败(如422),加入 completed 跳过
+            # 永久失败(如422), 加入 completed 跳过
             completed_keys.add(key)
 
 # 实际需完成 = 原始234 - NO_COV跳过12 - 消融去重18 - 历史永久失败(422)
@@ -346,7 +351,7 @@ print(f"  剩余: {total_needed - success_so_far}")
 print("=" * 90)
 
 if success_so_far >= total_needed:
-    print("\n✅ 所有测试已完成,直接输出分析结果.\n")
+    print("\n✅ 所有测试已完成, 直接输出分析结果.\n")
 else:
     runned = 0
     stop_by_rate_limit = False
@@ -366,7 +371,7 @@ else:
                     continue
 
                 r = run_forecast(scenario, model_id, in_len, auto_adapt=True)
-                append_result(str(RESULT_PATH), r)
+                append_result(str(RESULT_CSV_PATH), r)
                 all_results.append(r)
                 runned += 1
 
@@ -376,17 +381,17 @@ else:
                 else:
                     print(f"  [{r['scenario_id']}] {model_id:>14s} in={in_len:>3d} | 失败: {r['error'][:60]}")
                     if is_rate_limited(str(r.get("error", ""))):
-                        # 429: 不加入completed,不扣total,停止本次运行
+                        # 429: 不加入completed, 不扣total, 停止本次运行
                         stop_by_rate_limit = True
-                        print(f"     ↳ 限流失败(429),停止本次运行.")
-                        print(f"\n  ⚠️  因限流停止.本次新增: {runned}.请获取API配额后再次运行.\n")
+                        print(f"     ↳ 限流失败(429), 停止本次运行.")
+                        print(f"\n  ⚠️ 因限流停止.本次新增: {runned}.请获取API配额后再次运行.\n")
                         break
                     else:
-                        # 422等永久失败: 加入completed,扣total,继续运行
+                        # 422等永久失败: 加入completed, 扣total, 继续运行
                         completed_keys.add(key)
                         perm_fail_count += 1  # 累计永久失败数
                         total_needed -= 1
-                        print(f"     ↳ 永久失败,已跳过,不再重试.")
+                        print(f"     ↳ 永久失败, 已跳过, 不再重试.")
                 time.sleep(1)
 
     if not stop_by_rate_limit:
@@ -404,7 +409,7 @@ else:
 
                     r = run_forecast(ablation_scenario, model_id, in_len, auto_adapt=aa)
                     r["ablation"] = True
-                    append_result(str(RESULT_PATH), r)
+                    append_result(str(RESULT_CSV_PATH), r)
                     all_results.append(r)
                     runned += 1
 
@@ -415,15 +420,15 @@ else:
                         print(f"  [Y4] {model_id:>14s} in={in_len:>3d} {aa_label} | 失败: {r['error'][:60]}")
                         if is_rate_limited(str(r.get("error", ""))):
                             stop_by_rate_limit = True
-                            print(f"     ↳ 限流失败(429),停止本次运行.")
+                            print(f"     ↳ 限流失败(429), 停止本次运行.")
                             print(f"\n  ⚠️  因限流停止.本次新增: {runned}.请获取API配额后再次运行.\n")
                             break
                         else:
-                            # 永久失败(如422),加入 completed 避免下次重试
+                            # 永久失败(如422), 加入 completed 避免下次重试
                             completed_keys.add(key)
                             perm_fail_count += 1  # 累计永久失败数
                             total_needed -= 1
-                            print(f"     ↳ 永久失败,已跳过,不再重试.")
+                            print(f"     ↳ 永久失败, 已跳过, 不再重试.")
                     time.sleep(1)
 
     if not stop_by_rate_limit:
@@ -547,7 +552,7 @@ remaining = total_needed - len(success_results)
 print(f"\n{'=' * 90}")
 print("最终汇总")
 print("=" * 90)
-print(f"  结果文件: {RESULT_PATH}")
+print(f"  结果文件: {RESULT_CSV_PATH}")
 print(f"  成功记录(去重): {len(success_results)} / 实际需完成: {total_needed}")
 print("-" * 90)
 print(f"  任务统计:")
@@ -564,7 +569,7 @@ print("-" * 90)
 if remaining == 0:
     print(f"✅ 全部完成！")
 elif stop_by_rate_limit:
-    print(f"⏳ 未全部完成,请获取API额度后续继续跑.")
+    print(f"⏳ 未全部完成, 请获取API额度后续继续跑.")
 else:
-    print(f"⏳ 未全部完成,请检查其他错误.")
+    print(f"⏳ 未全部完成, 请检查其他错误.")
 print("=" * 90)
