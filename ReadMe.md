@@ -23,3 +23,5 @@
    `python -m venv .venv`         # 建立虚拟环境  
    `source .venv/bin/activate`    # 激活虚拟环境  
    `deactivate`                   # 退出虚拟环境  
+- 运行:   
+   `python ./features/futureCovs/dirtyData/dirty_test.py`             # 脏数据鲁棒性  
