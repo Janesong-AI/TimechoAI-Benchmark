@@ -26,7 +26,7 @@
 - 运行:   
    `python ./features/futureCovs/covariant/cov_test.py`               # 协变量有效性  
    `python ./features/futureCovs/dirtyData/dirty_test.py`             # 脏数据鲁棒性  
-   `python ./features/futureCovs/inputLength/input_length_test.py`    # input_length 消融实验  
+   `python ./features/futureCovs/inputLength/input_length_test.py`    # input_length消融测试 
    `python ./features/futureCovs/irregularSampling/irregular_sampling_test.py`  # 非规则采样鲁棒性  
    `python ./features/futureCovs/conceptDrift/concept_drift_test_v1.py`  # 概念漂移与工况切换测试  
    `python ./features/futureCovs/conceptDrift/concept_drift_test_v2.py`  # 概念漂移与工况切换测试(XYZ场景)  

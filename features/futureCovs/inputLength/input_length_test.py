@@ -1,25 +1,17 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 input_length_test.py —— input_length消融测试
 ====================================
-
-所属模块: features/futureCovs/inputLength (未来协变量测试套件-输入长度)
-测试对象: TimechoAI 预测 API 在不同历史输入长度下的响应能力
+作用: TimechoAI 预测 API 在不同历史输入长度下的响应能力
 设计目的: 验证 DEFAULT_INPUT_LENGTH 配置的实际可用性, 确保模型能正确处理
           指定长度的历史数据, 并返回预期的 output_length 个预测点. 
-# 同一模型, 分别用 96/192/256/384/512 点输入, 对比 MAE 随 input_length 变化
-
-数据文件:
-  - sample.csv: 含 time(日期)和 target(目标值)两列的简单时间序列,
-    无协变量列. 共 365+ 行, 足够取 DEFAULT_INPUT_LENGTH=256 个历史点.
-
-注意事项:
-  1. sample.csv 只有 time + target 两列, history_covs / future_covs 均为 None.
-  2. 输出保存为 input_length_result.csv(step, pred_value).
-  3. 如需测试不同输入长度, 修改 DEFAULT_INPUT_LENGTH 或直接修改 forecast() 的 output_length 参数即可. 
+原理: 传不同的 input_length (96/192/256/384/512), 对比 MAE/RMSE 变化
 
 Author: Janesong
-Create Date: 2026/06/29.
+Create Date: 2026/06/29, Updated on 2026/07/14.
 """
+
 
 import os
 import sys
@@ -37,9 +29,10 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from config.settings import DEFAULT_OUTPUT_LENGTH
 from core.timecho import forecast
-from utils.cvs_utils import save_to_csv
+from utils.file_utils import save_to_csv
 
 SCRIPT_DIR = Path(__file__).parent
+RESULT_CSV_PATH = SCRIPT_DIR / "input_length_result.csv"
 
 # ============================================================
 # 1. 生成合成数据(与脏数据测试同源, 保证可比性)
@@ -60,7 +53,7 @@ ground_truth = df.iloc[-64:]["target"].values
 FORECAST_LEN = DEFAULT_OUTPUT_LENGTH
 
 # ============================================================
-# 2. 消融实验配置
+# 2. 消融测试配置
 # ============================================================
 INPUT_LENGTHS = [96, 192, 256, 384, 512]
 MODELS = ["Timer-3.5", "Chronos-2"]
@@ -69,7 +62,7 @@ MODELS = ["Timer-3.5", "Chronos-2"]
 # 3. 逐模型 × 逐长度 测试
 # ============================================================
 total_calls = len(MODELS) * len(INPUT_LENGTHS)
-print(f"🚀 消融实验: {len(MODELS)} 模型 × {len(INPUT_LENGTHS)} 长度 = {total_calls} 次调用")
+print(f"🚀 消融测试: {len(MODELS)} 模型 × {len(INPUT_LENGTHS)} 长度 = {total_calls} 次调用")
 print("=" * 80)
 
 all_results = []
@@ -125,7 +118,7 @@ for model_id in MODELS:
 # 4. 汇总打印
 # ============================================================
 print("\n" + "=" * 80)
-print("📊 消融实验汇总")
+print("📊 消融测试汇总")
 print("=" * 80)
 print(f"  {'模型':>12s} | {'input_len':>9s} | {'MAE':>10s} | {'RMSE':>10s} | {'耗时(ms)':>8s}")
 print(f"  {'─'*12}─┼─{'─'*9}─┼─{'─'*10}─┼─{'─'*10}─┼─{'─'*8}")
@@ -139,9 +132,7 @@ for r in all_results:
 # ============================================================
 # 5. 保存结果
 # ============================================================
-result_df = pd.DataFrame(all_results)
-out_path = SCRIPT_DIR / "input_length_result.csv"
-save_to_csv(result_df, out_path)
-print(f"\n💾 结果已保存: {out_path}")
+result_path = save_to_csv(RESULT_CSV_PATH, all_results)
+print(f"   💾 结果已保存: {result_path}")
 print("=" * 80)
 print("测试完成！")
