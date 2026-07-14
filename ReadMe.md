@@ -1,34 +1,49 @@
-## 1. 核心架构 - 分层架构
-- 本项目基于 Python 3.12, 核心依赖 `timecho-ai` 和 `pandas`, 是专门用于测试 TimechoAI【时序数据库大模型】.
+# TSFM Robustness Benchmark
 
-## 2. 目录与文件规范
-- `config/`: 全局配置管理模块.
-   - `setting.xml`: 集中管理环境变量(如 `TIMECHO_API_KEY`)及全局默认参数.
-- `core/`: 核心通用组件层(跨业务复用). 
-   - `resume.py`: 封装断点续跑机制, 管理检查点状态与文件持久化.
-   - `timecho.py`: 封装 TimechoAI API 交互逻辑.
-- `features/`: 业务特性实现层, 存放具体业务场景逻辑.
-- `utils/`: 基础工具库, 存放无状态纯函数及通用实体封装.
-   - `client.py`: 封装底层客户端连接实体.
-   - `file_utils.py`: 文件操作工具.
-- `README.md`: 项目说明文档, 提供项目概述、使用方法、注意事项等.
+[English](./README.md) | [中文](./ReadMe-zh.md)
 
-## 3. 测试流程
-1. 初始化配置: 从 `config/setting.xml` 中读取环境变量和默认参数.
+The TSFM Robustness Benchmark is a systematic testing tool designed to evaluate the engineering robustness of Time Series Foundation Models (TSFMs) in edge cases (e.g., frequency mismatch, data contamination, covariate interference). This release includes a systematic evaluation of TimechoAI as the first targeted model. More models will be integrated in subsequent iterations.
 
-## 4. 命令与安装
-- 安装:   
+## 1. Core Architecture - Layered Architecture
+- This project is built on Python 3.12, with core dependencies on `timecho-ai` and `pandas`.
+
+## 2. Directory and File Specifications
+- `config/`: Global configuration management module.
+   - `setting.xml`: Centralizes environment variables (e.g., `TIMECHO_API_KEY`) and global default parameters.
+- `core/`: Core common component layer (cross-business reuse). 
+   - `resume.py`: Encapsulates the checkpoint resume mechanism, managing checkpoint states and file persistence.
+   - `timecho.py`: Encapsulates TimechoAI API interaction logic.
+- `features/`: Business feature implementation layer, containing specific business scenario logic.
+- `utils/`: Basic utility library, containing stateless pure functions and general entity encapsulations.
+   - `client.py`: Encapsulates the underlying client connection entity.
+   - `file_utils.py`: File operation utilities.
+- `main.py`: Project main entry point, responsible for initializing configuration and starting the testing process.
+- `README.md`: Project documentation, providing an overview, usage instructions, and notes.
+
+## 3. Testing Process
+1. Initialize configuration: Read environment variables and default parameters from `config/setting.xml`.
+
+## 4. Commands and Installation
+- **Installation**:   
    `python -m pip install timecho-ai pandas`  
-- 虚拟环境:   
-   `python -m venv .venv`         # 建立虚拟环境  
-   `source .venv/bin/activate`    # 激活虚拟环境  
-   `deactivate`                   # 退出虚拟环境  
-- 运行:   
-   `python ./features/futureCovs/covariant/cov_test.py`               # 协变量有效性  
-   `python ./features/futureCovs/dirtyData/dirty_test.py`             # 脏数据鲁棒性  
-   `python ./features/futureCovs/inputLength/input_length_test.py`    # input_length消融测试 
-   `python ./features/futureCovs/irregularSampling/irregular_sampling_test.py`  # 非规则采样鲁棒性  
-   `python ./features/futureCovs/conceptDrift/concept_drift_test_v1.py`  # 概念漂移与工况切换测试  
-   `python ./features/futureCovs/conceptDrift/concept_drift_test_v2.py`  # 概念漂移与工况切换测试(XYZ场景)  
-   `python ./features/futureCovs/freqMismatch/frequency_mismatch_test.py`  # C5 频率不匹配鲁棒性  
+- **Virtual Environment**:   
+   `python -m venv .venv`         # Create virtual environment  
+   `source .venv/bin/activate`    # Activate virtual environment  
+   `deactivate`                   # Deactivate virtual environment  
+- **Run**:   
+   `python ./features/futureCovs/conceptDrift/concept_drift_test_v1.py`  # Concept drift and working condition switching test  
+   `python ./features/futureCovs/conceptDrift/concept_drift_test_v2.py`  # Concept drift and working condition switching test (XYZ scenario)  
+   `python ./features/futureCovs/covariant/cov_test.py`               # Covariate effectiveness  
+   `python ./features/futureCovs/dirtyData/dirty_test.py`             # Dirty data robustness  
+   `python ./features/futureCovs/forecastHorizon/forecast_horizon_ablation.py` # C3 Forecast horizon ablation test  
+   `python ./features/futureCovs/freqMismatch/frequency_mismatch_test.py`  # C5 Frequency mismatch robustness  
+   `python ./features/futureCovs/inputLength/input_length_test.py`    # input_length ablation test  
+   `python ./features/futureCovs/irregularSampling/irregular_sampling_test.py`  # Irregular sampling robustness  
+
+## 5. Testing Objectives
+- Edge case exploration: Systematically verify the engineering robustness of the model against boundary conditions such as complex queries, replica inconsistencies, and out-of-order time-series writes.  
+- Defensive architecture verification: Apply strict engineering standards to test the model's degradation behavior and recovery capabilities under non-ideal inputs.
+
+## 6. Scope of Testing Disclaimer
+The test results of this framework are limited by the specific model version, data preprocessing strategy, and runtime environment. This tool aims to provide an objective reference perspective for the engineering defensive architecture design of time-series models, rather than an absolute assertion of the final performance of any commercial product.
 
