@@ -9,7 +9,7 @@ The TSFM Robustness Benchmark is a systematic testing tool designed to evaluate 
 
 ## 2. Directory and File Specifications
 - `config/`: Global configuration management module.
-   - `setting.xml`: Centralizes environment variables (e.g., `TIMECHO_API_KEY`) and global default parameters.
+   - `settings.py`: Centralizes environment variables (e.g., `TIMECHO_API_KEY`) and global default parameters.
 - `core/`: Core common component layer (cross-business reuse). 
    - `resume.py`: Encapsulates the checkpoint resume mechanism, managing checkpoint states and file persistence.
    - `timecho.py`: Encapsulates TimechoAI API interaction logic.
@@ -21,7 +21,7 @@ The TSFM Robustness Benchmark is a systematic testing tool designed to evaluate 
 - `README.md`: Project documentation, providing an overview, usage instructions, and notes.
 
 ## 3. Testing Process
-1. Initialize configuration: Read environment variables and default parameters from `config/setting.xml`.
+1. Initialize configuration: Read environment variables and default parameters from `config/settings.py`.
 
 ## 4. Commands and Installation
 - **Installation**:   
