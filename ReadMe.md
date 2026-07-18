@@ -9,7 +9,7 @@ The TSFM Robustness Benchmark is a systematic testing tool designed to evaluate 
 
 ## 2. Directory and File Specifications
 - `config/`: Global configuration management module.
-   - `settings.py`: Centrally manages environment variables (e.g., `TIMECHO_API_KEY`), etc.
+   - `settings.py`: Global environment variable configuration (e.g., `TIMECHO_API_KEY`), etc.
    - `constants.py`: Global constants definition.
 - `core/`: Core common component layer (cross-business reuse). 
    - `resume.py`: Encapsulates the checkpoint resume mechanism, managing checkpoint states and file persistence.
@@ -18,7 +18,7 @@ The TSFM Robustness Benchmark is a systematic testing tool designed to evaluate 
 - `utils/`: Basic utility library, containing stateless pure functions and general entity encapsulations.
    - `client.py`: Encapsulates the underlying client connection entity.
    - `files.py`: File operation utilities.
-- `main.py`: Project main entry point, responsible for initializing configuration and starting the testing process.
+- `run.py`: Unified entry point; bootstraps sys.path and dispatches execution by module name or file path.
 - `README.md`: Project documentation, providing an overview, usage instructions, and notes.
 
 ## 3. Testing Process
