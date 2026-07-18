@@ -24,11 +24,10 @@ The TSFM Robustness Benchmark is a systematic testing tool designed to evaluate 
 1. Initialize configuration: Read environment variables and default parameters from `config/settings.py`.
 
 ## 4. Commands and Installation
-- **Installation**:   
-   `python -m pip install timecho-ai pandas`  
 - **Virtual Environment**:   
    `python -m venv .venv`         # Create virtual environment  
    `source .venv/bin/activate`    # Activate virtual environment  
+   `python -m pip install timecho-ai pandas`  # Install dependencies  
    `deactivate`                   # Deactivate virtual environment  
 - **Run**:   
    `python ./features/futureCovs/conceptDrift/concept_drift_test_v1.py`  # Concept drift and working condition switching test  
