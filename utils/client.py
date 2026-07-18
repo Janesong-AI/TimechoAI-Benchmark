@@ -1,45 +1,68 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
-utils/client.py —— TimechoAI客户端工厂
+utils/client.py —— TimechoAI Client Factory
 
-所属层级: utils(工具层)
-作用: 统一管理 TimechoAIClient 实例的创建, 屏蔽 API_KEY 的获取逻辑.
+Purpose: Unified management of TimechoAIClient / TimechoAIAsyncClient instance
+         creation, shielding API_KEY retrieval logic.
+Design Goals: All business modules (core, features) should obtain clients through this factory, in order to:
+    1. API_KEY is only read from config.settings, one modification takes effect globally
+    2. Mock clients can be injected here in the future, facilitating testing
+    3. Only need to modify this file when SDK constructor signature changes
 
-设计目标: 所有业务模块(core、features)都应通过此工厂获取客户端, 以便:
-          1. API_KEY 只从 config.settings 读取, 一处修改全局生效
-          2. 未来可在此处注入 mock 客户端, 方便测试
-          3. SDK 构造函数签名变化时只需修改此文件
+Calling Convention:
+    Recommended way:
+        from core.timecho import forecast    # Business modules use indirectly through core
+    Avoided way:
+        from utils.client import get_timecho_client # Business modules should not call directly
+        from timecho_ai import TimechoAIClient # Business modules should not reference SDK directly
+
+In the entire project, only core/timecho.py is the direct caller of utils.client.
+All test scripts under features/ use this factory indirectly through core.timecho.forecast().
+
+Author: Janesong
+Create Date: 2026/06/29.
 """
 
-from timecho_ai import TimechoAIClient
+from timecho_ai import TimechoAIClient, TimechoAIAsyncClient
 from config.settings import API_KEY
 
+# ---------------------------------------------------------------------------
+# Sync client singleton
+# ---------------------------------------------------------------------------
 _client: TimechoAIClient | None = None
+
+# ---------------------------------------------------------------------------
+# Async client singleton
+# ---------------------------------------------------------------------------
+_async_client: TimechoAIAsyncClient | None = None
+
+
+# ===========================================================================
+#  Sync client
+# ===========================================================================
 
 def get_timecho_client(api_key: str | None = None) -> TimechoAIClient:
     """
-    获取 TimechoAIClient 单例实例
-    
-    首次调用时会自动预热连接,避免首次API调用失败.
-    
+    Get the TimechoAIClient singleton instance.
+
+    Automatically warms up the connection upon the first call to prevent
+    potential failures during the initial API request.
+
     Args:
-        api_key: API 密钥字符串. 传 None(默认)时自动从 config.settings.API_KEY 读取.
-                 优先级: 显式传入 > 环境变量 TIMECHO_API_KEY > 默认值
+        api_key: The API key string. If None (default), it is automatically
+                 read from `config.settings.API_KEY`.
+                 Priority: Explicit argument > Environment variable `TIMECHO_API_KEY` > Default value.
 
     Returns:
-        TimechoAIClient 实例
-
-    调用链路:
-        features/ 测试脚本
-          → core.timecho.forecast()
-            → utils.client.get_timecho_client()
-              → timecho_ai.TimechoAIClient(api_key=...)
+        The TimechoAIClient instance.
     """
     global _client
 
     if _client is None:
         _client = TimechoAIClient(api_key=api_key or API_KEY)
 
-        # 预热:触发底层初始化,避免首次调用DNS解析失败
+        # Warm-up: triggers underlying initialization to prevent DNS resolution failure on the first call.
         _warmup_client(_client)
 
     return _client
@@ -47,25 +70,25 @@ def get_timecho_client(api_key: str | None = None) -> TimechoAIClient:
 
 def _warmup_client(client: TimechoAIClient) -> None:
     """
-    预热客户端连接
-    
+    Warm up sync client connection.
+
     Args:
-        client: TimechoAIClient 实例
+        client: TimechoAIClient instance.
     """
     try:
-        # 直接触发Session创建，不调用任何API
+        # Directly triggers Session creation without making any API calls.
         client._get_session()
     except Exception as e:
-        # 预热失败不阻塞流程,打印警告即可
-        print(f"⚠️ SDK预热失败(可忽略): {type(e).__name__}")
-        # 不抛出异常,允许后续重试
+        # Warm-up failure does not block the execution flow.
+        print(f"[warning] SDK warm-up failed (ignorable): {type(e).__name__}")
+        # Do not raise an exception; allows for subsequent retries.
 
 
 def reset_client() -> None:
     """
-    重置客户端实例
-    
-    用于测试场景,强制下次调用重新创建客户端.
+    Reset the sync client instance.
+
+    Used in testing scenarios to force the client to be recreated on the next call.
     """
     global _client
     if _client is not None:
@@ -74,3 +97,90 @@ def reset_client() -> None:
         except:
             pass
     _client = None
+
+
+# ===========================================================================
+#  Async client
+# ===========================================================================
+
+def get_timecho_async_client(api_key: str | None = None) -> TimechoAIAsyncClient:
+    """
+    Get the TimechoAIAsyncClient singleton instance.
+
+    The async client shares the same API_KEY resolution logic as the sync
+    client.  The first call triggers an asynchronous warm-up so that the
+    underlying aiohttp / httpx session is ready before real requests.
+
+    Args:
+        api_key: The API key string. If None (default), it is automatically
+                 read from `config.settings.API_KEY`.
+                 Priority: Explicit argument > Environment variable `TIMECHO_API_KEY` > Default value.
+
+    Returns:
+        The TimechoAIAsyncClient instance.
+    """
+    global _async_client
+
+    if _async_client is None:
+        _async_client = TimechoAIAsyncClient(api_key=api_key or API_KEY)
+
+        # Warm-up: triggers underlying async session creation.
+        _warmup_async_client(_async_client)
+
+    return _async_client
+
+
+def _warmup_async_client(client: TimechoAIAsyncClient) -> None:
+    """
+    Warm up async client connection.
+
+    Tries the async warm-up path first; if no event-loop is running (e.g.
+    the caller is in a plain synchronous context), falls back to creating
+    a temporary loop so that session initialization still happens eagerly.
+
+    Args:
+        client: TimechoAIAsyncClient instance.
+    """
+    import asyncio
+
+    async def _do_warmup() -> None:
+        # Trigger async session creation without making any API calls.
+        await client._get_async_session()
+
+    try:
+        # Case 1: an event loop is already running — schedule the coroutine.
+        loop = asyncio.get_running_loop()
+        loop.create_task(_do_warmup())
+    except RuntimeError:
+        # Case 2: no running loop — create one just for warm-up.
+        try:
+            asyncio.run(_do_warmup())
+        except Exception as e:
+            print(f"[warning] Async SDK warm-up failed (ignorable): {type(e).__name__}")
+    except Exception as e:
+        print(f"[warning] Async SDK warm-up failed (ignorable): {type(e).__name__}")
+
+
+def reset_async_client() -> None:
+    """
+    Reset the async client instance.
+
+    Properly closes the underlying async session before discarding the
+    singleton.  Safe to call from both sync and async contexts.
+    """
+    global _async_client
+    if _async_client is not None:
+        try:
+            import asyncio
+
+            async def _close():
+                await _async_client.aclose()
+
+            try:
+                loop = asyncio.get_running_loop()
+                loop.create_task(_close())
+            except RuntimeError:
+                asyncio.run(_close())
+        except Exception:
+            pass
+    _async_client = None
