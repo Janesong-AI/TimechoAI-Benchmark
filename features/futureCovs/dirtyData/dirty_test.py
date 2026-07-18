@@ -26,7 +26,7 @@ sys.path.insert(0, str(Path(__file__).parents[3]))
 from config.settings import MODEL_LIST, DEFAULT_INPUT_LENGTH, DEFAULT_OUTPUT_LENGTH
 from core.timecho import forecast, calc_metrics
 from core.resume import load_completed_results, append_result, is_rate_limited
-from utils.file_utils import save_with_json_backup
+from utils.files import save_with_json_backup
 
 # ============================================================
 # 数据相关配置

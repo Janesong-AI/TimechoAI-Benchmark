@@ -16,8 +16,6 @@ concept_drift_test_v1.py —— 概念漂移与工况切换测试
 Author: Janesong
 Create Date: 2026/07/06, Update on 2026/07/09, Update on 2026/07/12.
 """
-
-import os
 import sys
 import time
 from pathlib import Path
@@ -33,7 +31,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from config.settings import MODEL_LIST, DEFAULT_OUTPUT_LENGTH
 from core.timecho import forecast
-from utils.file_utils import save_to_csv
+from utils.files import save_to_csv
 
 SCRIPT_DIR = Path(__file__).parent
 RESULT_CSV_PATH = SCRIPT_DIR / "concept_drift_result_v1.csv"

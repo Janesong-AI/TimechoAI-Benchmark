@@ -21,12 +21,11 @@ sys.path.insert(0, str(Path(__file__).parents[3]))
 
 from config.settings import DEFAULT_INPUT_LENGTH, DEFAULT_OUTPUT_LENGTH
 from core.timecho import forecast, calc_metrics, calc_diff
-from utils.file_utils import save_with_json_backup
+from utils.files import save_with_json_backup
 
 # ============================================================
 # 数据相关配置
 # ============================================================
-
 SCRIPT_DIR = Path(__file__).parent
 CSV_PATH = SCRIPT_DIR / "cov_test_data.csv"        # 测试数据文件
 RESULT_PATH = SCRIPT_DIR / "cov_test_results.csv"  # 预测结果文件

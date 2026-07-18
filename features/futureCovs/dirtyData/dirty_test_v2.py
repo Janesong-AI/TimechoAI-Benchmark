@@ -26,7 +26,7 @@ sys.path.insert(0, str(Path(__file__).parents[3]))  # 项目根目录
 from config.settings import MODEL_LIST, DEFAULT_INPUT_LENGTH, DEFAULT_OUTPUT_LENGTH
 from core.timecho import forecast, calc_metrics
 from core.resume import load_completed_results, append_result, is_rate_limited
-from utils.file_utils import save_with_json_backup
+from utils.files import save_with_json_backup
 
 # ============================================================
 # 数据相关配置
@@ -315,7 +315,7 @@ for model_id in MODEL_LIST:
                 }
                 append_result(str(RESULT_PATH), result_record)
 
-            time.sleep(1)  # 礼貌等待
+            time.sleep(1)
 
 # ============================================================
 # 测试统计
@@ -345,9 +345,6 @@ results_data = all_records
 # ============================================================
 # 汇总表格
 # ============================================================
-print("\n\n" + "=" * 100)
-print("📋 鲁棒性分析结论")
-print("=" * 100)
 
 def get_result(model_id, scene_prefix, pass_name="预处理"):
     """辅助函数: 精确获取某个模型、某个场景、某一轮的结果"""
@@ -359,6 +356,9 @@ def get_result(model_id, scene_prefix, pass_name="预处理"):
 # ============================================================
 # 结论分析
 # ============================================================
+print("\n\n" + "=" * 100)
+print("📋 鲁棒性分析结论")
+print("=" * 100)
 
 for model_id in MODEL_LIST:
     model_results = [r for r in results_data if r["model_id"] == model_id]

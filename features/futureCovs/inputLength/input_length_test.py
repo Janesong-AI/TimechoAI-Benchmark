@@ -12,7 +12,6 @@ Author: Janesong
 Create Date: 2026/06/29, Updated on 2026/07/14.
 """
 
-
 import os
 import sys
 import time
@@ -29,7 +28,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from config.settings import DEFAULT_OUTPUT_LENGTH
 from core.timecho import forecast
-from utils.file_utils import save_to_csv
+from utils.files import save_to_csv
 
 SCRIPT_DIR = Path(__file__).parent
 RESULT_CSV_PATH = SCRIPT_DIR / "input_length_result.csv"
@@ -112,7 +111,7 @@ for model_id in MODELS:
                 "success": False, "error": str(e)
             })
         
-        time.sleep(1) # 避免 API 限流
+        time.sleep(1)
 
 # ============================================================
 # 4. 汇总打印
