@@ -31,13 +31,16 @@ Author: Janesong
 Create Date: 2026/07/10, Update on 2026/07/12.
 """
 
-import os
-import sys
 import time
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
+import numpy as np
+import sys
+
+from config.constants import MODEL_LIST, DEFAULT_OUTPUT_LENGTH
+from core.resume import load_completed_results, append_result, is_rate_limited
+from core.timecho import forecast
 
 # ============================================================
 # 0. 路径配置与导入
@@ -45,9 +48,6 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from config.settings import MODEL_LIST, DEFAULT_OUTPUT_LENGTH
-from core.resume import load_completed_results, append_result, is_rate_limited
-from core.timecho import forecast
 
 SCRIPT_DIR = Path(__file__).parent
 RESULT_CSV_PATH = SCRIPT_DIR / "concept_drift_result_v2.csv"

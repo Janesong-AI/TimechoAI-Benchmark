@@ -26,7 +26,7 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from config.settings import DEFAULT_OUTPUT_LENGTH
+from config.constants import DEFAULT_OUTPUT_LENGTH
 from core.timecho import forecast
 from utils.files import save_to_csv
 

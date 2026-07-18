@@ -19,7 +19,7 @@ import numpy as np
 import sys
 sys.path.insert(0, str(Path(__file__).parents[3]))
 
-from config.settings import DEFAULT_INPUT_LENGTH, DEFAULT_OUTPUT_LENGTH
+from config.constants import DEFAULT_INPUT_LENGTH, DEFAULT_OUTPUT_LENGTH
 from core.timecho import forecast, calc_metrics, calc_diff
 from utils.files import save_with_json_backup
 

@@ -1,36 +1,19 @@
 """
-settings.py —— 全局配置
-集中管理所有可配置项, 包括 API 密钥、默认模型、默认参数等.
+config/settings.py -- Global Configuration
+Centrally manages all environment-configurable items, including API keys, etc.
 """
 
 import os
 from pathlib import Path
 
 # ============================================================
-# API 配置
+# API Configuration
 # ============================================================
-# 优先级: 环境变量 > 此处默认值
-# 如需修改, 推荐在 .env 或环境变量中设置 TIMECHO_API_KEY
+# Priority: Environment variables > Default values here
+# If modification is needed, it is recommended to set TIMECHO_API_KEY in .env or via environment variables.
+
 API_KEY = os.getenv(
     "TIMECHO_API_KEY",
     "ts-Update-Your-TIMECHO_API_KEY",
 )
 
-# ============================================================
-# 默认模型参数
-# ============================================================
-DEFAULT_MODEL_ID = "Timer-3.5"
-MODEL_LIST = [
-    "Auto",          # 自动选择
-    "Timer-3.5",     # Timercho旗舰模型
-    "Timer-3.0",     # 上一代
-    "Chronos-2",     # Amazon 出品
-    "AutoARIMA",     # 统计方法, 自回归移动平均模型
-    "Holt-Winters",  # 统计方法, 霍尔特-温特斯模型 / 三次指数平滑
-]
-
-# ============================================================
-# 默认预测参数
-# ============================================================
-DEFAULT_INPUT_LENGTH = 256    # 输入 256 个历史点
-DEFAULT_OUTPUT_LENGTH = 64    # 预测 64 个未来点
