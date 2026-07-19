@@ -17,8 +17,8 @@ Calling Convention:
         from utils.client import get_timecho_client # Business modules should not call directly
         from timecho_ai import TimechoAIClient # Business modules should not reference SDK directly
 
-In the entire project, only core/timecho.py is the direct caller of utils.client.
-All test scripts under features/ use this factory indirectly through core.timecho.forecast().
+  In the entire project, only core/timecho.py is the direct caller of utils.client.
+  All test scripts under features/ use this factory indirectly through core.timecho.forecast().
 
 Author: Janesong
 Create Date: 2026/06/29.

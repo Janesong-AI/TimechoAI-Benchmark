@@ -1,10 +1,11 @@
 """
-timecho.py —— TimechoAI CRUD 封装
-提供 Timecho 预测接口的通用调用层, 包括:
-  - forecast(): 封装 API 调用、计时、异常处理
-  - extract_pred_values(): 从 API 返回的结果 DataFrame 中提取预测值
-  - calc_metrics(): 计算 MAE / RMSE / MAPE
-  - calc_diff(): 计算两组预测值的平均绝对差异
+timecho.py —— TimechoAI CRUD Wrapper
+
+Provides a general calling layer for Timecho prediction interface, including:
+  - forecast(): Wraps API call, timing, and exception handling
+  - extract_pred_values(): Extracts prediction values from API-returned result DataFrame
+  - calc_metrics(): Calculates MAE / RMSE / MAPE
+  - calc_diff(): Calculates mean absolute difference between two sets of prediction values
 """
 
 # ============================================================
@@ -13,17 +14,17 @@ import aiohttp
 _original_aiohttp_request = aiohttp.ClientSession._request
 
 async def _hooked_aiohttp_request(self, method, url, **kwargs):
-    """拦截 aiohttp 请求, 捕获 429 的完整响应头"""
+    """Intercept aiohttp requests to capture full response headers for 429"""
     resp = await _original_aiohttp_request(self, method, url, **kwargs)
     if resp.status == 429:
         print("\n" + "=" * 60)
-        print("[429 拦截器] 捕获到 Too Many Requests (aiohttp)")
+        print("[429 Interceptor] Caught Too Many Requests (aiohttp)")
         print(f"  URL: {url}")
-        print(f"  状态码: {resp.status}")
-        print(f"  Retry-After: {resp.headers.get('Retry-After', '未返回')}")
-        print(f"  X-RateLimit-Remaining: {resp.headers.get('X-RateLimit-Remaining', '未返回')}")
-        print(f"  X-RateLimit-Reset: {resp.headers.get('X-RateLimit-Reset', '未返回')}")
-        print(f"  全部响应头:")
+        print(f"  Status Code: {resp.status}")
+        print(f"  Retry-After: {resp.headers.get('Retry-After', 'Not returned')}")
+        print(f"  X-RateLimit-Remaining: {resp.headers.get('X-RateLimit-Remaining', 'Not returned')}")
+        print(f"  X-RateLimit-Reset: {resp.headers.get('X-RateLimit-Reset', 'Not returned')}")
+        print(f"  All Response Headers:")
         for k, v in resp.headers.items():
             print(f"    {k}: {v}")
         print("=" * 60 + "\n")
@@ -42,18 +43,18 @@ import requests
 from utils.client import get_timecho_client
 
 # ============================================================
-# 预测值提取
+# Prediction Value Extraction
 # ============================================================
 
 def extract_pred_values(pred_df: pd.DataFrame) -> np.ndarray:
     """
-    从预测结果 DataFrame 中提取数值列(排除 time 列). 
+    Extract numeric columns from prediction result DataFrame (excluding time column).
 
     Args:
-        pred_df: API 返回的预测结果 DataFrame
+        pred_df: Prediction result DataFrame returned by API
 
     Returns:
-        float 类型的 numpy 数组
+        numpy array of float type
     """
     if "target" in pred_df.columns:
         return pred_df["target"].values.astype(float)
@@ -62,7 +63,7 @@ def extract_pred_values(pred_df: pd.DataFrame) -> np.ndarray:
 
 
 # ============================================================
-# 预测调用(核心封装)
+# Prediction Call (Core Wrapper)
 # ============================================================
 
 def forecast(
@@ -77,29 +78,29 @@ def forecast(
     api_key: str | None = None,
 ) -> tuple[np.ndarray | None, float, str | None]:
     """
-    调用 TimechoAI 预测接口, 返回预测值、耗时、错误信息.
+    Call TimechoAI prediction interface and return prediction values, elapsed time, and error message.
 
     Args:
-        targets: 历史目标值 DataFrame(必须含 time 和 target 列)
-        history_covs: 历史协变量 DataFrame(可选)
-        future_covs: 未来协变量 DataFrame(可选, 传 None 表示不传协变量)
-        model_id: 模型 ID
-        output_length: 预测长度
-        time_col: 时间列名
-        auto_adapt: 是否自动适配
-        api_key: API 密钥(可选, 默认使用全局配置)
+        targets: Historical target values DataFrame (must contain time and target columns)
+        history_covs: Historical covariates DataFrame (optional)
+        future_covs: Future covariates DataFrame (optional, pass None to indicate no covariates)
+        model_id: Model ID
+        output_length: Prediction length
+        time_col: Time column name
+        auto_adapt: Whether to auto-adapt
+        api_key: API key (optional, uses global configuration by default)
 
     Returns:
         (pred_values, elapsed_ms, error_msg)
-        - pred_values: 预测值数组(失败时为 None)
-        - elapsed_ms: 耗时(毫秒)
-        - error_msg: 错误信息(成功时为 None)
+        - pred_values: Prediction value array (None on failure)
+        - elapsed_ms: Elapsed time (milliseconds)
+        - error_msg: Error message (None on success)
     """
     client = get_timecho_client(api_key)
     t0 = time.perf_counter()
 
     try:
-        # 只在协变量不为 None 时才传入 API, 避免某些模型因 None 值报错
+        # Only pass to API when covariates are not None, avoiding errors from certain models due to None values
         api_kwargs: dict = {
             "targets": targets,
             "model_id": model_id,
@@ -119,18 +120,18 @@ def forecast(
     except Exception as e:
         if hasattr(e, 'response'):
             resp = e.response
-            print(f"状态码: {resp.status_code}")
-            print(f"Retry-After: {resp.headers.get('Retry-After', '未返回')}")
+            print(f"Status Code: {resp.status_code}")
+            print(f"Retry-After: {resp.headers.get('Retry-After', 'Not returned')}")
         else:
-            print(f"异常类型: {type(e)}")
-            # print(f"异常属性: {dir(e)}")
-            print(f"异常信息: {e}")
+            print(f"Exception Type: {type(e)}")
+            # print(f"Exception Attributes: {dir(e)}")
+            print(f"Exception Message: {e}")
         elapsed_ms = (time.perf_counter() - t0) * 1000
         return None, elapsed_ms, str(e)
 
 
 # ============================================================
-# 精度指标
+# Accuracy Metrics
 # ============================================================
 
 def calc_metrics(
@@ -138,11 +139,11 @@ def calc_metrics(
     truth: np.ndarray,
 ) -> dict[str, float | None]:
     """
-    计算 MAE / RMSE / MAPE.
+    Calculate MAE / RMSE / MAPE.
 
     Args:
-        pred: 预测值
-        truth: 真实值
+        pred: Prediction values
+        truth: Ground truth values
 
     Returns:
         {"MAE": ..., "RMSE": ..., "MAPE": ...}
@@ -157,14 +158,14 @@ def calc_metrics(
 
 def calc_diff(pred1: np.ndarray | None, pred2: np.ndarray | None) -> float | None:
     """
-    计算两组预测值之间的平均绝对差异.
+    Calculate mean absolute difference between two sets of prediction values.
 
     Args:
-        pred1: 第一组预测值
-        pred2: 第二组预测值
+        pred1: First set of prediction values
+        pred2: Second set of prediction values
 
     Returns:
-        平均绝对差异, 任一为 None 时返回 None
+        Mean absolute difference, returns None if either is None
     """
     if pred1 is None or pred2 is None:
         return None
