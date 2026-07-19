@@ -1,32 +1,45 @@
 """
-core —— 核心组件层
+core -  Core Component Layer
 
-该包封装跨业务复用的核心通用组件, 承上启下: 向下调用 utils 层服务, 向上为 features 层提供标准接口. 目前包含:
+This package encapsulates essential reusable components, serving as a bridge between 
+the business layer and underlying utility services. It invokes services from the 
+``utils`` layer and provides standard interfaces for business modules.
 
-模块:
-  resume.py — 断点续跑机制.
-    封装检查点状态管理与文件持久化逻辑, 支持长任务中断后的状态恢复.
-  timecho.py — TimechoAI API 交互逻辑.
-    封装 API 请求、响应处理及底层 utils.client 调用, 对外提供统一的高级 API.
+Modules:
+  dataResults.py: Result Data Processing
+    Contains utility functions for data cleaning and result retrieval.
+  resume.py: Checkpoint & Resume Management
+    Manages checkpoint status and file persistence, enabling recovery of long-running tasks after interruptions.
+  timecho.py: TimechoAI API Interaction
+    Handles API requests and response processing via ``utils.client``, offering a unified high-level API for external use.
 
-使用约定:
-  业务模块(如 features/) 应通过 core.timecho 间接访问 TimechoAI 服务，
-  core 层是唯一直接使用 utils.client 的模块。
+Usage:
+  Business modules (e.g., in ``features/``) should access TimechoAI services 
+  via ``core.timecho``. The ``core`` layer should be the sole module directly 
+  utilizing ``utils.client`` to ensure decoupling.
 
-  导入路径示例:
-    from core.timecho import forecast  # 推荐方式
-    from core.resume import load_completed_results, append_result, is_rate_limited  # 推荐方式
-    # 而非:
-    # from utils.client import get_timecho_client  # 业务模块应避免
+  Import Path Examples:
+    # Recommended Approach
+      from core.dataResults import clean_nan_values, get_results
+      from core.timecho import forecast
+      from core.resume import load_completed_results, append_result, is_rate_limited
+
+    # Avoid direct imports from utils.client to prevent tight coupling
+    # from utils.client import get_timecho_client
 """
 
-from core.resume import (
+from .dataResults import (
+    clean_nan_values, 
+    get_results
+)
+
+from .resume import (
     load_completed_results,
     append_result,
     is_rate_limited
 )
 
-from core.timecho import (
+from .timecho import (
     forecast,
     extract_pred_values,
     calc_metrics,
@@ -34,9 +47,14 @@ from core.timecho import (
 )
 
 __all__ = [
+    # --- dataResults.py ---
+    "clean_nan_values", 
+    "get_results",
+    # --- resume.py ---
     "load_completed_results",
     "append_result",
     "is_rate_limited",
+    # --- timecho.py ---
     "forecast",
     "extract_pred_values",
     "calc_metrics",
