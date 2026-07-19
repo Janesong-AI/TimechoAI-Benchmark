@@ -18,11 +18,11 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from config.constants import DEFAULT_OUTPUT_LENGTH
 from core.timecho import forecast
+from config import constants as CONSTANTS
 
-FORECAST_LEN = DEFAULT_OUTPUT_LENGTH  # 64
-N_TRAIN = 512
+FORECAST_LEN = CONSTANTS.FORECAST_POINT_LEN_64  # 64
+N_TRAIN = CONSTANTS.TRAIN_SEQ_LEN_512
 np.random.seed(42)
 
 # ============================================================

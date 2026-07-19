@@ -14,7 +14,7 @@ import time
 import numpy as np
 
 from config.settings import OUTPUT_DIR, DATA_DIR
-from config.constants import DEFAULT_INPUT_LENGTH, DEFAULT_OUTPUT_LENGTH
+from config.constants import HISTORY_POINT_LEN_256, FORECAST_POINT_LEN_64
 from core.timecho import forecast, calc_metrics, calc_diff
 from utils.files import read_csv_to_dataframe, save_with_json_backup
 
@@ -36,8 +36,8 @@ print(f"   Columns: {list(raw_df.columns)}")
 print()
 
 # Split data
-history = raw_df.iloc[:DEFAULT_INPUT_LENGTH].copy()
-future_real = raw_df.iloc[DEFAULT_INPUT_LENGTH:].copy()
+history = raw_df.iloc[:HISTORY_POINT_LEN_256].copy()
+future_real = raw_df.iloc[HISTORY_POINT_LEN_256:].copy()
 ground_truth = future_real["target"].values
 
 print(f"   History data: {len(history)} rows (time range: {history['time'].iloc[0]} ~ {history['time'].iloc[-1]})")
@@ -66,7 +66,7 @@ print(f"   A. Real covariates cov mean: {future_cov_real['cov'].mean():.2f}")
 
 # Scenario B: Pure random noise (mean 0, std 100)
 future_cov_noise = future_real[["time"]].copy()
-future_cov_noise["cov"] = np.random.randn(DEFAULT_OUTPUT_LENGTH) * 100
+future_cov_noise["cov"] = np.random.randn(FORECAST_POINT_LEN_64) * 100
 print(f"   B. Noise covariates  cov mean: {future_cov_noise['cov'].mean():.2f}(pure random)")
 
 # Scenario C: Completely opposite (negate real values)
@@ -108,7 +108,7 @@ for scene_name, fc in SCENARIOS:
         history_covs=history_covs,
         future_covs=fc,
         model_id=MODEL_ID,
-        output_length=DEFAULT_OUTPUT_LENGTH,
+        output_length=FORECAST_POINT_LEN_64,
         time_col="time",
         auto_adapt=True,
     )

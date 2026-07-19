@@ -29,7 +29,7 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from config.constants import MODEL_LIST, DEFAULT_OUTPUT_LENGTH
+from config.constants import MODEL_LIST, FORECAST_POINT_LEN_64, TRAIN_SEQ_LEN_512
 from core.timecho import forecast
 from utils.files import save_to_csv
 
@@ -39,8 +39,8 @@ RESULT_CSV_PATH = SCRIPT_DIR / "concept_drift_result_v1.csv"
 # ============================================================
 # 1. 参数配置
 # ============================================================
-N_TRAIN = 512               # 训练段总长度(包含历史窗口及之前的数据)
-N_FORECAST = DEFAULT_OUTPUT_LENGTH  # 预测长度(64)
+N_TRAIN = TRAIN_SEQ_LEN_512          # 训练段总长度(包含历史窗口及之前的数据)
+N_FORECAST = FORECAST_POINT_LEN_64  # 预测长度(64)
 DRIFT_LEAD = 20             # 漂移提前量: 在训练段末尾的前 DRIFT_LEAD 个点开始引入漂移
                             # 这样当 input_length > DRIFT_LEAD 时, 历史窗口会包含漂移信息
 

@@ -24,7 +24,7 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from config.constants import DEFAULT_OUTPUT_LENGTH
+from config.constants import FORECAST_POINT_LEN_64
 from core.timecho import forecast
 
 SCRIPT_DIR = Path(__file__).parent
@@ -35,7 +35,7 @@ SCRIPT_DIR = Path(__file__).parent
 np.random.seed(42)
 
 TOTAL = 320  # 256 history + 64 forecast
-FORECAST_LEN = DEFAULT_OUTPUT_LENGTH  # 64
+FORECAST_LEN = FORECAST_POINT_LEN_64  # 64
 
 # 理想等间隔时间戳(1小时一个点)
 ideal_dates = pd.date_range("2024-01-01", periods=TOTAL, freq="1h")

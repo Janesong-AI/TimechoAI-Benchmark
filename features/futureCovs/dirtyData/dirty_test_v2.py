@@ -23,7 +23,7 @@ import numpy as np
 import sys
 sys.path.insert(0, str(Path(__file__).parents[3]))  # 项目根目录
 
-from config.constants import MODEL_LIST, DEFAULT_INPUT_LENGTH, DEFAULT_OUTPUT_LENGTH
+from config.constants import MODEL_LIST, HISTORY_POINT_LEN_256, FORECAST_POINT_LEN_64
 from core.timecho import forecast, calc_metrics
 from core.resume import load_completed_results, append_result, is_rate_limited
 from utils.files import save_with_json_backup
@@ -77,8 +77,8 @@ print()
 print("📦 准备 ground truth...")
 clean_df = pd.read_csv(SCRIPT_DIR / "dirty_clean.csv")
 clean_df["time"] = pd.to_datetime(clean_df["time"])
-ground_truth = clean_df.iloc[DEFAULT_INPUT_LENGTH:]["target"].values
-future_cov = clean_df.iloc[DEFAULT_INPUT_LENGTH:][["time", "cov"]].copy()
+ground_truth = clean_df.iloc[HISTORY_POINT_LEN_256:]["target"].values
+future_cov = clean_df.iloc[HISTORY_POINT_LEN_256:][["time", "cov"]].copy()
 print(f"   ground_truth: {len(ground_truth)} 个点")
 print(f"   ground_truth 范围: {ground_truth.min():.2f} ~ {ground_truth.max():.2f}")
 print()
@@ -120,7 +120,7 @@ for model_id in MODEL_LIST:
         df = pd.read_csv(SCRIPT_DIR / csv_file)
         df["time"] = pd.to_datetime(df["time"])
 
-        history = df.iloc[:DEFAULT_INPUT_LENGTH].copy()
+        history = df.iloc[:HISTORY_POINT_LEN_256].copy()
         # 检查脏数据概况
         nan_count = history["target"].isna().sum()
         valid_vals = history["target"].dropna()
@@ -195,7 +195,7 @@ for model_id in MODEL_LIST:
                 forecast_kwargs = {
                     "targets": history_targets,
                     "model_id": model_id,
-                    "output_length": DEFAULT_OUTPUT_LENGTH,
+                    "output_length": FORECAST_POINT_LEN_64,
                     "time_col": "time",
                     "auto_adapt": True,
                 }

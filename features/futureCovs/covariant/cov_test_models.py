@@ -13,7 +13,7 @@ Create Date: 2026/06/30, Update on 2026/07/19.
 import time
 
 from config.settings import OUTPUT_DIR, DATA_DIR
-from config.constants import MODEL_LIST, DEFAULT_INPUT_LENGTH, DEFAULT_OUTPUT_LENGTH
+from config.constants import MODEL_LIST, HISTORY_POINT_LEN_256, FORECAST_POINT_LEN_64
 from core.timecho import forecast, calc_metrics
 from utils.files import read_csv_to_dataframe, save_with_json_backup
 
@@ -33,10 +33,10 @@ print(f"   Columns: {list(raw_df.columns)}")
 print()
 
 # Split data into history (input) and future (prediction target) parts
-# History: first DEFAULT_INPUT_LENGTH rows for model input
+# History: first HISTORY_POINT_LEN_256 rows for model input
 # Future: remaining rows for prediction and evaluation
-history = raw_df.iloc[:DEFAULT_INPUT_LENGTH].copy()
-future_real = raw_df.iloc[DEFAULT_INPUT_LENGTH:].copy()
+history = raw_df.iloc[:HISTORY_POINT_LEN_256].copy()
+future_real = raw_df.iloc[HISTORY_POINT_LEN_256:].copy()
 ground_truth = future_real["target"].values  # Ground truth for metric calculation
 
 # Prepare covariate data
@@ -77,7 +77,7 @@ for model_id in MODEL_LIST:
         history_covs=history_covs,
         future_covs=future_cov_real,
         model_id=model_id,
-        output_length=DEFAULT_OUTPUT_LENGTH,
+        output_length=FORECAST_POINT_LEN_64,
         time_col="time",
         auto_adapt=True,
     )

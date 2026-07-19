@@ -38,7 +38,7 @@ import pandas as pd
 import numpy as np
 import sys
 
-from config.constants import MODEL_LIST, DEFAULT_OUTPUT_LENGTH
+from config.constants import MODEL_LIST, FORECAST_POINT_LEN_64, CONTEXT_LENGTH_512
 from core.resume import load_completed_results, append_result, is_rate_limited
 from core.timecho import forecast
 
@@ -55,8 +55,8 @@ RESULT_CSV_PATH = SCRIPT_DIR / "concept_drift_result_v2.csv"
 # ============================================================
 # 1. 全局参数
 # ============================================================
-N_CONTEXT = 512      # 上下文窗口总长度(历史段)
-N_FORECAST = DEFAULT_OUTPUT_LENGTH  # 64
+N_CONTEXT = CONTEXT_LENGTH_512      # 上下文窗口总长度(历史段)
+N_FORECAST = FORECAST_POINT_LEN_64  # 64
 N_TOTAL = N_CONTEXT + N_FORECAST    # 576
 
 NO_COV_MODELS = {"Timer-3.5", "Timer-3.0"}     # 不支持协变量的模型列表(Z类场景直接跳过)

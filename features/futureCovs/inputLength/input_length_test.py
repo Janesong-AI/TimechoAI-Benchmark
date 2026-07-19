@@ -4,7 +4,7 @@
 input_length_test.py —— input_length消融测试
 ====================================
 作用: TimechoAI 预测 API 在不同历史输入长度下的响应能力
-设计目的: 验证 DEFAULT_INPUT_LENGTH 配置的实际可用性, 确保模型能正确处理
+设计目的: 验证 HISTORY_POINT_LEN_256 配置的实际可用性, 确保模型能正确处理
           指定长度的历史数据, 并返回预期的 output_length 个预测点. 
 原理: 传不同的 input_length (96/192/256/384/512), 对比 MAE/RMSE 变化
 
@@ -26,7 +26,7 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from config.constants import DEFAULT_OUTPUT_LENGTH
+from config.constants import FORECAST_POINT_LEN_64
 from core.timecho import forecast
 from utils.files import save_to_csv
 
@@ -49,7 +49,7 @@ df = pd.DataFrame({"time": dates, "target": target.round(4)})
 
 # 真实值(最后 64 点, 作为 ground truth)
 ground_truth = df.iloc[-64:]["target"].values
-FORECAST_LEN = DEFAULT_OUTPUT_LENGTH
+FORECAST_LEN = FORECAST_POINT_LEN_64
 
 # ============================================================
 # 2. 消融测试配置
