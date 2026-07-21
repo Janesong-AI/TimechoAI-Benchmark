@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-concept_drift_test_v2.py —— 概念漂移与工况切换测试(XYZ场景) 
+concept_drift_test_v2_error.py —— 概念漂移测试(XYZ场景) 
 ====================================
 工业背景:
   设备启停、负载阶跃、季节性工况切换会导致训练数据与预测目标分布不一致.
@@ -11,14 +11,10 @@ concept_drift_test_v2.py —— 概念漂移与工况切换测试(XYZ场景)
   构造训练段平稳、预测段发生分布漂移的数据, 检验模型对三种典型漂移
   模式的抵抗力, 并验证长上下文窗口在漂移下是否反而是负担.
 
-特性:
-  1. 自动判断同级目录是否有 concept_drift_result_v2.csv
-  2. 有 CSV: 读取记录, 跳过已完成, 走断点续跑
-  3. 无 CSV: 从零开始跑全量
-  4. 每完成一次调用立即追加保存
-  5. 429 限流: 停止本次运行, 不扣总数, 下次可重试
-  6. 422 永久失败: 扣总数, 不再重试, 不影响最终分析
-  7. Timer-3.5/Timer-3.0 跑 Z 类场景: 直接跳过, 因为不支持协变量【422】
+脚本问题:
+  1.方差倍率定义错误: “方差 3x”实际是标准差 3x
+  2.X3/Y2场景混杂了趋势突变
+  3.Y2场景噪声提取存在偏差: Y2 将部分趋势差值作为噪声进行了放大
 
 调用次数:
   主测试(XYZ): 6 模型 * 11 场景 * 3 长度 = 198 次.
@@ -32,35 +28,28 @@ Create Date: 2026/07/10, Update on 2026/07/12.
 """
 
 import time
-from pathlib import Path
-
-import pandas as pd
 import numpy as np
-import sys
+import pandas as pd
 
+from config.settings import OUTPUT_DIR
 from config.constants import MODEL_LIST, FORECAST_POINT_LEN_64, CONTEXT_LENGTH_512
 from core.resume import load_completed_results, append_result, is_rate_limited
 from core.timecho import forecast
 
 # ============================================================
-# 0. 路径配置与导入
+# 1. Data related configuration
 # ============================================================
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(PROJECT_ROOT))
+OUTPUT_SUBDIR = OUTPUT_DIR / "features" / "futureCovs" / "conceptDrift"
+OUTPUT_SUBDIR.mkdir(parents=True, exist_ok=True)
+RESULT_CSV_PATH = OUTPUT_SUBDIR / "concept_drift_result_v2_error.csv" 
 
-SCRIPT_DIR = Path(__file__).parent
-RESULT_CSV_PATH = SCRIPT_DIR / "concept_drift_result_v2.csv"
-
-# ============================================================
-# 1. 全局参数
-# ============================================================
 N_CONTEXT = CONTEXT_LENGTH_512      # 上下文窗口总长度(历史段)
-N_FORECAST = FORECAST_POINT_LEN_64  # 64
+N_FORECAST = FORECAST_POINT_LEN_64   # 预测长度(64)
 N_TOTAL = N_CONTEXT + N_FORECAST    # 576
 
 NO_COV_MODELS = {"Timer-3.5", "Timer-3.0"}     # 不支持协变量的模型列表(Z类场景直接跳过)
 
-DATES = pd.date_range("2024-01-01", periods=N_TOTAL, freq="1h")
+DATES = pd.date_range("2026-07-06", periods=N_TOTAL, freq="1h")
 
 # 基础信号参数
 BASE_TREND_START = 50
@@ -82,11 +71,11 @@ INPUT_LENGTHS = [96, 256, 512]
 AUTO_ADAPT_ABLATION_SCENARIO = "Y4"
 AUTO_ADAPT_VALUES = [True, False]
 
-# 原始任务总数 = 主测试(11场景×6模型×3长度) + 消融(6模型×2开关×3长度)
+# 原始任务总数 = 主测试(11场景*6模型*3长度) + 消融(6模型*2开关*3长度)
 TOTAL_RAW = 11 * 6 * 3 + 6 * 2 * 3  # = 234
-# Z场景 × 不支持协变量的2个模型 × 3长度 = 12(代码层跳过, 不调API)
+# Z场景 * 不支持协变量的2个模型 * 3长度 = 12(代码层跳过, 不调API)
 NO_COV_SKIP_COUNT = 2 * len(NO_COV_MODELS) * len(INPUT_LENGTHS)  # = 12
-# 消融测试中 Y4/adapt=True 与主测试完全重复 = 6模型×1×3长度 = 18
+# 消融测试中 Y4/adapt=True 与主测试完全重复 = 6模型*1*3长度 = 18
 DEDUP_SKIP_COUNT = 6 * 1 * len(INPUT_LENGTHS)  # = 18
 
 
@@ -556,7 +545,7 @@ print(f"  成功记录(去重): {len(success_results)} / 实际需完成: {total
 print("-" * 90)
 print(f"  任务统计:")
 print(f"    原始任务总数:           {TOTAL_RAW} 次")
-print(f"    - 模型不支持协变量跳过:  {NO_COV_SKIP_COUNT} 次  (Timer-3.5/Timer-3.0 × Z场景)")
+print(f"    - 模型不支持协变量跳过:  {NO_COV_SKIP_COUNT} 次  (Timer-3.5/Timer-3.0 * Z场景)")
 print(f"    - 消融去重(Y4/adapt=True): {DEDUP_SKIP_COUNT} 次  (与主测试重复)")
 print(f"    - API永久失败(422等):    {perm_fail_count} 次")
 print(f"    实际需完成:             {total_needed} 次")
