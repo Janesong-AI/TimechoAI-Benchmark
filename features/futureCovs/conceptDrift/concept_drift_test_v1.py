@@ -35,11 +35,13 @@ RESULT_CSV_PATH = OUTPUT_SUBDIR / "concept_drift_result_v1.csv"    # Prediction 
 
 N_TRAIN = TRAIN_SEQ_LEN_512          # 训练段总长度(包含历史窗口及之前的数据)
 N_FORECAST = FORECAST_POINT_LEN_64   # 预测长度(64)
+TOTAL = N_TRAIN + N_FORECAST         # 序列总长度
 DRIFT_LEAD = 20             # 漂移提前量: 在训练段末尾的前 DRIFT_LEAD 个点开始引入漂移
                             # 这样当 input_length > DRIFT_LEAD 时, 历史窗口会包含漂移信息
 
-TOTAL = N_TRAIN + N_FORECAST
-np.random.seed(42)
+# 噪声参数
+BASE_NOISE_STD = 2.0                           # 基础噪声标准差
+VAR_3X_NOISE_STD = BASE_NOISE_STD * np.sqrt(3) # 标准差 (≈3.4641, var=12)
 
 # ============================================================
 # 2. 生成基础平稳信号(训练段)
@@ -49,7 +51,7 @@ dates = pd.date_range("2026-07-01", periods=TOTAL, freq="1h")
 # 训练段(前 N_TRAIN 点): 趋势 + 24h周期 + 小噪声
 trend_base = np.linspace(50, 65, N_TRAIN)
 seasonal_base = 15 * np.sin(2 * np.pi * np.arange(N_TRAIN) / 24)
-noise_base = np.random.randn(N_TRAIN) * 2
+noise_base = np.random.randn(N_TRAIN) * BASE_NOISE_STD
 train_steady = trend_base + seasonal_base + noise_base
 
 # ============================================================
@@ -70,7 +72,7 @@ def generate_full_sequence(mode):
     # 基础周期(连续)
     seasonal_full = 15 * np.sin(2 * np.pi * t_full / 24)
     # 基础噪声(整体生成, 保证连续性)
-    noise_full = np.random.randn(TOTAL) * 2
+    noise_full = np.random.randn(TOTAL) * BASE_NOISE_STD
 
     # 复制一份用于叠加漂移
     signal = trend_full + seasonal_full + noise_full
@@ -89,7 +91,7 @@ def generate_full_sequence(mode):
     elif mode == "B3-方差扩张(3x)":
         # 方差放大 3 倍, 从 drift_start 开始, 重新生成噪声(保持趋势和周期不变)
         # 为了保持连续性, 只对 drift_start 之后的噪声进行替换
-        noise_new = np.random.randn(TOTAL - drift_start) * 6
+        noise_new = np.random.randn(TOTAL - drift_start) * VAR_3X_NOISE_STD
         signal[drift_start:] = (trend_full + seasonal_full)[drift_start:] + noise_new
 
     elif mode == "B4-周期相位偏移(90度)":
@@ -98,11 +100,14 @@ def generate_full_sequence(mode):
         signal[drift_start:] = trend_full[drift_start:] + seasonal_shifted[drift_start:] + noise_full[drift_start:]
 
     elif mode == "B5-复合漂移(均值+方差+相位)":
-        # 三者叠加
-        signal[drift_start:] += 15
-        noise_new = np.random.randn(TOTAL - drift_start) * 6
+        # 三者叠加: 均值平移(+15) + 方差 3x + 周期相位偏移 90°
+        noise_new = np.random.randn(TOTAL - drift_start) * VAR_3X_NOISE_STD
         seasonal_shifted = 15 * np.sin(2 * np.pi * t_full / 24 + np.pi / 2)
-        signal[drift_start:] = trend_full[drift_start:] + seasonal_shifted[drift_start:] + noise_new
+        signal[drift_start:] = (
+            (trend_full + seasonal_shifted)[drift_start:]
+            + noise_new
+            + 15
+        )
 
     else:
         raise ValueError(f"未知场景: {mode}")
@@ -126,6 +131,8 @@ print("=" * 80)
 print("场景: 概念漂移测试(漂移提前出现于历史窗口末尾)")
 print(f"   {len(MODEL_LIST)} 模型 x {len(SCENARIOS)} 场景 x {len(INPUT_LENGTHS)} 输入长度 = {total_calls} 次调用")
 print(f"   漂移提前量: {DRIFT_LEAD} 个点(历史窗口需 > {DRIFT_LEAD} 才可见)")
+print(f"   基础噪声: std={BASE_NOISE_STD}, var={BASE_NOISE_STD**2:.0f}")
+print(f"   B3/B5 方差扩张噪声: std={VAR_3X_NOISE_STD:.4f}, var={VAR_3X_NOISE_STD**2:.0f} (方差 3x)")
 print("=" * 80)
 
 all_results = []
@@ -253,7 +260,7 @@ for model_id in MODEL_LIST:
                 verdict = "[严重] 严重退化"
             print(f"     {r['scenario']:>28s}: MAE={r['mae']:.4f} ({ratio:.1f}x) -> {verdict}")
 
-# 分析2: 对比“历史含漂移”与“历史不含漂移”的性能差异(以B2为例)
+# 分析2: 对比"历史含漂移"与"历史不含漂移"的性能差异(以B2为例)
 print("\n【分析2】历史信息对漂移适应的影响(以B2-均值平移为例, input_length=256)")
 print("-" * 70)
 for model_id in MODEL_LIST:
