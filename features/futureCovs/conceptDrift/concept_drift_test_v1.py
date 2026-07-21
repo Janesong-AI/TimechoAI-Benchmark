@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-concept_drift_test_v1.py —— 概念漂移与工况切换测试
+concept_drift_test_v1.py —— 概念漂移测试(简约版)
 ====================================
 工业背景:
   设备启停、负载阶跃、季节性工况切换会导致训练数据与预测目标分布不一致.
@@ -14,33 +14,27 @@ concept_drift_test_v1.py —— 概念漂移与工况切换测试
   模式的抵抗力, 并验证长上下文窗口在漂移下是否反而是负担.
 
 Author: Janesong
-Create Date: 2026/07/06, Update on 2026/07/09, Update on 2026/07/12.
+Create Date: 2026/07/06, Update on 2026/07/21.
 """
-import sys
-import time
-from pathlib import Path
 
+import time
 import numpy as np
 import pandas as pd
 
-# ============================================================
-# 0. 路径配置与导入
-# ============================================================
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(PROJECT_ROOT))
-
+from config.settings import OUTPUT_DIR
 from config.constants import MODEL_LIST, FORECAST_POINT_LEN_64, TRAIN_SEQ_LEN_512
 from core.timecho import forecast
 from utils.files import save_to_csv
 
-SCRIPT_DIR = Path(__file__).parent
-RESULT_CSV_PATH = SCRIPT_DIR / "concept_drift_result_v1.csv"
+# ============================================================
+# 1. Data related configuration
+# ============================================================
+OUTPUT_SUBDIR = OUTPUT_DIR / "features" / "futureCovs" / "conceptDrift"
+OUTPUT_SUBDIR.mkdir(parents=True, exist_ok=True)
+RESULT_CSV_PATH = OUTPUT_SUBDIR / "concept_drift_result_v1.csv"    # Prediction results file 预测结果文件
 
-# ============================================================
-# 1. 参数配置
-# ============================================================
 N_TRAIN = TRAIN_SEQ_LEN_512          # 训练段总长度(包含历史窗口及之前的数据)
-N_FORECAST = FORECAST_POINT_LEN_64  # 预测长度(64)
+N_FORECAST = FORECAST_POINT_LEN_64   # 预测长度(64)
 DRIFT_LEAD = 20             # 漂移提前量: 在训练段末尾的前 DRIFT_LEAD 个点开始引入漂移
                             # 这样当 input_length > DRIFT_LEAD 时, 历史窗口会包含漂移信息
 
@@ -50,7 +44,7 @@ np.random.seed(42)
 # ============================================================
 # 2. 生成基础平稳信号(训练段)
 # ============================================================
-dates = pd.date_range("2024-01-01", periods=TOTAL, freq="1h")
+dates = pd.date_range("2026-07-01", periods=TOTAL, freq="1h")
 
 # 训练段(前 N_TRAIN 点): 趋势 + 24h周期 + 小噪声
 trend_base = np.linspace(50, 65, N_TRAIN)
@@ -303,17 +297,17 @@ for model_id in MODEL_LIST:
     # 判断趋势
     mae_list = [b5_results[k] for k in sorted(b5_results.keys())]
     if mae_list[-1] < mae_list[0] * 0.9:
-        print(f"     ✅[通过] 长窗口(512)比短窗口(96) MAE 更低 -> 长上下文在漂移下有收益")
+        print(f"     [Pass] 长窗口(512)比短窗口(96) MAE 更低 -> 长上下文在漂移下有收益")
     elif mae_list[-1] > mae_list[0] * 1.1:
-        print(f"     ⚠️[警告] 长窗口(512)比短窗口(96) MAE 更高 -> 长上下文可能引入冗余信息")
+        print(f"     [warning][警告] 长窗口(512)比短窗口(96) MAE 更高 -> 长上下文可能引入冗余信息")
     else:
         print(f"     -> 长短窗口 MAE 接近, input_length 对漂移场景影响不大")
 
 
 # ============================================================
-# 7. 保存结果
+# 7. Save Results
 # ============================================================
 result_path = save_to_csv(RESULT_CSV_PATH, all_results)
-print(f"\n结果已保存: {result_path}")
+print(f"   Results saved to CSV: {result_path}")
 print("=" * 80)
-print("测试完成！")
+print(" Test completed!")

@@ -48,8 +48,8 @@ TSFM 鲁棒性基准测试是一种系统化的测试工具, 旨在检验时间�
 > `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
 
 - 运行:  
-   `python ./features/futureCovs/conceptDrift/concept_drift_test_v1.py`  # 概念漂移与工况切换测试  
-   `python ./features/futureCovs/conceptDrift/concept_drift_test_v2.py`  # 概念漂移与工况切换测试(XYZ场景)  
+   `python run.py features.futureCovs.conceptDrift.concept_drift_test_v1`  # 概念漂移测试(简约版)  
+   `python run.py features.futureCovs.conceptDrift.concept_drift_test_v2`  # 概念漂移测试(XYZ场景)  
    `python run.py features.futureCovs.covariant.cov_test`                # 协变量有效性  
    `python run.py features.futureCovs.covariant.cov_test_models`         # 协变量支持度测试(遍历所有模型)  
    `python ./features/futureCovs/dirtyData/dirty_test.py`                # 脏数据鲁棒性  

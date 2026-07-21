@@ -21,8 +21,8 @@ concept_drift_test_v2.py —— 概念漂移与工况切换测试(XYZ场景)
   7. Timer-3.5/Timer-3.0 跑 Z 类场景: 直接跳过, 因为不支持协变量【422】
 
 调用次数:
-  主测试(XYZ): 6 模型 × 11 场景 × 3 长度 = 198 次.
-  消融测试(Y4 auto_adapt): 6 模型 × 2 开关 × 3 长度 = 36 次.
+  主测试(XYZ): 6 模型 * 11 场景 * 3 长度 = 198 次.
+  消融测试(Y4 auto_adapt): 6 模型 * 2 开关 * 3 长度 = 36 次.
   扣除不支持协变量的 12 次(NO_COV 跳过).
   扣除消融去重 18 次(Y4/adapt=True 与主测试重复).
   原始任务总数 234 次, 实际需完成 204 次.
@@ -47,7 +47,6 @@ from core.timecho import forecast
 # ============================================================
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(PROJECT_ROOT))
-
 
 SCRIPT_DIR = Path(__file__).parent
 RESULT_CSV_PATH = SCRIPT_DIR / "concept_drift_result_v2.csv"
