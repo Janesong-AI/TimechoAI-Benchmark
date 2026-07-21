@@ -8,15 +8,15 @@ The TSFM Robustness Benchmark is a systematic testing tool designed to evaluate 
 - This project is built on Python 3.12, with core dependencies on `timecho-ai` and `pandas`.
 
 ## 2. Directory and File Specifications
-- `config/`: Global configuration management module.
+- `config/`: Global configuration management module
    - `dataResults.py`: Result Data Processing.
    - `settings.py`: Global environment variable configuration (e.g., `TIMECHO_API_KEY`), etc.
    - `constants.py`: Global constants definition.
-- `core/`: Core common component layer (cross-business reuse). 
+- `core/`: Core common component layer (cross-business reuse)
    - `resume.py`: Encapsulates the checkpoint resume mechanism, managing checkpoint states and file persistence.
    - `timecho.py`: Encapsulates TimechoAI API interaction logic.
-- `features/`: Business feature implementation layer, containing specific business scenario logic.
-- `utils/`: Basic utility library, containing stateless pure functions and general entity encapsulations.
+- `features/`: Business feature implementation layer, containing specific business scenario logic
+- `utils/`: Basic utility library, containing stateless pure functions and general entity encapsulations
    - `client.py`: Encapsulates the underlying client connection entity.
    - `files.py`: File operation utilities.
 - `run.py`: Unified entry point; bootstraps sys.path and dispatches execution by module name or file path.
@@ -28,12 +28,24 @@ The TSFM Robustness Benchmark is a systematic testing tool designed to evaluate 
 3. Testing execution: Executes the specified testing process based on the provided command-line arguments.
 4. Result output: Outputs the testing results to the console or specified file.
 
-## 4. Commands and Installation
-- **Virtual Environment**:   
-   `python -m venv .venv`         # Create virtual environment  
-   `source .venv/bin/activate`    # Activate virtual environment  
-   `python -m pip install timecho-ai pandas`  # Install dependencies  
-   `deactivate`                   # Deactivate virtual environment  
+## 4. Commands and Installation  
+- **Create virtual environment** (universal):  
+  `python -m venv .venv`
+
+- **Activate the virtual environment** (choose the command based on your OS):  
+  - **macOS / Linux**: `source .venv/bin/activate`  
+  - **Windows (CMD)**: `.venv\Scripts\activate.bat`  
+  - **Windows (PowerShell)**: `.venv\Scripts\Activate.ps1`
+
+- **Install dependencies** (**run this the first time after activating the venv**):  
+  `python -m pip install timecho-ai pandas`
+
+- **Deactivate the virtual environment** (universal):  
+  `deactivate`
+
+>  **Windows PowerShell users**: If you see an error about script execution being disabled, open PowerShell as Administrator and run:  
+> `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
+
 - **Run**:   
    `python ./features/futureCovs/conceptDrift/concept_drift_test_v1.py`  # Concept drift and working condition switching test  
    `python ./features/futureCovs/conceptDrift/concept_drift_test_v2.py`  # Concept drift and working condition switching test (XYZ scenario)  
