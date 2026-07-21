@@ -56,7 +56,9 @@ print("-" * 50)
 
 # Import and execute module
 try:
-    importlib.import_module(module_path)
+    module = importlib.import_module(module_path)
+    if hasattr(module, 'main'):
+        module.main()
 except ModuleNotFoundError as e:
     print(f"\nError: Module {module_path} not found")
     print(f"Details: {e}")
